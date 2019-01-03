@@ -4,9 +4,132 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <koverse.version>2.8.0</koverse.version>
+    </properties>
+
     <groupId>com.koverse.examples</groupId>
     <artifactId>koverses-examples</artifactId>
     <version>2.9-SNAPSHOT</version>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.8.0</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>2.3</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.rat</groupId>
+                    <artifactId>apache-rat-plugin</artifactId>
+                    <version>0.11</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>2.17</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.lewisd</groupId>
+                    <artifactId>lint-maven-plugin</artifactId>
+                    <version>0.0.9</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.doxia</groupId>
+                        <artifactId>doxia-core</artifactId>
+                        <version>1.6</version>
+                        <exclusions>
+                            <exclusion>
+                                <groupId>xerces</groupId>
+                                <artifactId>xercesImpl</artifactId>
+                            </exclusion>
+                        </exclusions>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>rat</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <excludes>
+                        <exclude>README.md</exclude>
+                        <exclude>derby.log</exclude>
+                        <exclude>dependency-reduced-pom.xml</exclude>
+                        <exclude>.checkstyle</exclude>
+                        <exclude>src/main/resources/classesToInspect</exclude>
+                        <exclude>src/main/resources/datasets/departments.csv</exclude>
+                        <exclude>src/main/resources/datasets/employees.csv</exclude>
+                        <exclude>src/main/resources/datasets/tweets.jsonstream</exclude>
+                        <exclude>src/main/resources/datasets/weather.csv</exclude>
+                        <exclude>.github/pull_request_template.md</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <!-- Checkstyle to verify Java code style -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <configuration>
+                            <configLocation>google_checks.xml</configLocation>
+                            <encoding>UTF-8</encoding>
+                            <consoleOutput>true</consoleOutput>
+                            <violationSeverity>warning</violationSeverity>
+                            <failsOnError>true</failsOnError>
+                            <!-- <linkXRef>false</linkXRef> -->
+                            <violationIgnore>CustomImportOrder</violationIgnore>
+                        </configuration>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- linter for this pom.xml -->
+            <plugin>
+                <groupId>com.lewisd</groupId>
+                <artifactId>lint-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>pom-lint</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <dependencies>
         <dependency>
@@ -14,6 +137,78 @@
             <artifactId>koverse-thrift</artifactId>
             <version>2.9.0-alpha2</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.koverse</groupId>
+            <artifactId>koverse-sdk</artifactId>
+            <version>${koverse.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.scala-lang</groupId>
+                    <artifactId>scala-library</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.json4s</groupId>
+                    <artifactId>json4s-core_2.10</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>servlet-api</artifactId>
+                    <groupId>javax.servlet</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.koverse</groupId>
+            <artifactId>koverse-shaded-deps</artifactId>
+            <version>${koverse.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-mllib_2.10</artifactId>
+            <version>1.6.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- spark-testing-base dependencies -->
+        <dependency>
+            <groupId>com.holdenkarau</groupId>
+            <artifactId>spark-testing-base_2.10</artifactId>
+            <version>1.6.1_0.3.3</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-hive_2.10</artifactId>
+            <version>1.6.1</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- end spark-testing-base dependencies -->
+
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>koverse</id>
+            <name>Koverse Public Repo</name>
+            <url>http://nexus.koverse.com/nexus/content/groups/public/</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>koverse</id>
+            <url>http://nexus.koverse.com/nexus/content/groups/public/</url>
+        </pluginRepository>
+    </pluginRepositories>
 
 </project>
