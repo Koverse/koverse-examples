@@ -2,4 +2,7 @@
 .DS_Store
 .idea/*
 java/.idea/*
+java/target/*
 *.iml
+*.jar
+*.class
