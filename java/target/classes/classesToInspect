@@ -1,6 +1,0 @@
-com.koverse.example.spark.WordCountTransform
-com.koverse.example.spark.WordCountDataFrameTransform
-com.koverse.example.spark.JoinTransform
-com.koverse.example.spark.JavaWordCountTransform
-com.koverse.example.spark.NaiveBayesTrainedTransform
-com.koverse.example.spark.NaiveBayesPredictTransform
