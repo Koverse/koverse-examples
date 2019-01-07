@@ -1,8 +1,5 @@
-
 .DS_Store
-.idea/*
-java/.idea/*
-java/target/*
+.idea/
+java/target/
 *.iml
-*.jar
-*.class
+
