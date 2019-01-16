@@ -1,2 +1,2 @@
 com.koverse.example.spark.JavaWordCountTransform
-com.koverse.example.spark.SentimentAnalysis
+com.koverse.examples.analytics.SentimentAnalysis

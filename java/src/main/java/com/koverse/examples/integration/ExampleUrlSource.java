@@ -4,6 +4,7 @@ package com.koverse.examples.integration;
 import static com.koverse.com.google.common.base.Predicates.notNull;
 import static com.koverse.com.google.common.collect.Lists.newArrayList;
 
+import com.koverse.client.thrift.Client;
 import com.koverse.com.google.common.base.Function;
 import com.koverse.com.google.common.base.Splitter;
 import com.koverse.com.google.common.collect.FluentIterable;
@@ -11,6 +12,10 @@ import com.koverse.sdk.data.Parameter;
 import com.koverse.sdk.source.AbstractFileBasedSource;
 import com.koverse.sdk.source.ImportSourcePath;
 
+import com.koverse.thrift.dataflow.TSource;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +37,21 @@ public class ExampleUrlSource extends AbstractFileBasedSource {
   private static final Logger logger = LoggerFactory.getLogger(ExampleUrlSource.class);
 
   private FluentIterable<String> urls;
+
+  public static TSource getSource (Client client, String dataFlowName) throws TException {
+    TSource urlSource = new TSource();
+    String sourceURL = "";
+    urlSource.setName(dataFlowName + " URL Source");
+    urlSource.setTypeId(ExampleUrlSource.URL_SOURCE_TYPE_ID);
+
+    Map<String, String> importOptions = new HashMap<>();
+    importOptions.put(ExampleUrlSource.URLS_PARAMETER, sourceURL);
+    urlSource.setParameters(importOptions);
+
+    urlSource = client.createSourceInstance(urlSource);
+
+    return urlSource;
+  }
 
 
   @Override

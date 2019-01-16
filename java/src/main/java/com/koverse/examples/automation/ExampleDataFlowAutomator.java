@@ -21,13 +21,15 @@ import static com.koverse.com.google.common.collect.Lists.newArrayList;
 import com.koverse.client.thrift.Client;
 import com.koverse.client.thrift.ClientConfiguration;
 import com.koverse.client.thrift.KTConnection;
-import com.koverse.com.google.common.io.Resources;
 import com.koverse.examples.analytics.SentimentAnalysis;
 import com.koverse.examples.integration.ExampleUrlSource;
+import com.koverse.examples.integration.ExampleWikipediaSource;
 import com.koverse.thrift.TConfigValue;
 import com.koverse.thrift.TConfigValueType;
 import com.koverse.thrift.collection.TCollection;
+import com.koverse.thrift.collection.TIndexingPolicy;
 import com.koverse.thrift.dataflow.TImportFlow;
+import com.koverse.thrift.dataflow.TImportFlowSchedule;
 import com.koverse.thrift.dataflow.TImportFlowType;
 import com.koverse.thrift.dataflow.TJobAbstract;
 import com.koverse.thrift.dataflow.TSource;
@@ -35,68 +37,72 @@ import com.koverse.thrift.dataflow.TTransform;
 import com.koverse.thrift.dataflow.TTransformInputDataWindowType;
 import com.koverse.thrift.dataflow.TTransformScheduleType;
 
+import java.io.FileInputStream;
+import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.thrift.TException;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.thrift.TException;
 
 @Slf4j
 public class ExampleDataFlowAutomator {
 
-  private final String dataFlowName;
-  private final Client client;
-  private final String sourceURL;
+  private static Client connect() throws IOException, TException {
 
-  public ExampleDataFlowAutomator(String dataFlowName, String sourceURL, InputStream propertiesInputStream) throws IOException, TException {
+    String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
+    String appConfigPath = rootPath + "client.properties";
 
-    this.dataFlowName = dataFlowName;
-    this.sourceURL = sourceURL;
+    Properties appProperties = new Properties();
+    appProperties.load(new FileInputStream(appConfigPath));
 
-    Properties properties = new Properties();
+    String host = appProperties.getProperty("koverse.host");
+    String name = appProperties.getProperty("client.name");
+    String secret = appProperties.getProperty("client.secret");
 
-    // load a properties file
-    properties.load(propertiesInputStream);
+    if(host.isEmpty() || name.isEmpty() || secret.isEmpty()){
+      throw new IllegalArgumentException("You must update the application.properties file before running this example.");
+    }
 
-    ClientConfiguration config = ClientConfiguration.builder()
-        .clientName(properties.getProperty("clientName"))
-        .clientSecret(properties.getProperty("clientSecret"))
-        .build();
-
-    KTConnection conn = new KTConnection(config);
-    client = new Client(conn);
+    return connect(host, name, secret);
   }
 
-  public void setupDataFlow() throws TException {
+  private static Client connect(String host, String clientName, String clientSecret) throws TException {
+    ClientConfiguration config =
+        ClientConfiguration.builder().host(host).clientName(clientName).clientSecret(clientSecret).build();
+    KTConnection conn = new KTConnection(config);
+    return new Client(conn);
+  }
+
+  public static void setupDataFlow(Client client, String dataFlowName) throws TException {
 
     log.info("setting up source");
-    TSource urlSource = new TSource();
+    TSource tSource =  ExampleUrlSource.getSource(client, dataFlowName);
 
-    urlSource.setName(dataFlowName + " URL Source");
-    urlSource.setTypeId(ExampleUrlSource.URL_SOURCE_TYPE_ID);
-
-    Map<String, String> importOptions = new HashMap<>();
-    importOptions.put(ExampleUrlSource.URLS_PARAMETER, sourceURL);
-    urlSource.setParameters(importOptions);
-
-    urlSource = client.createSourceInstance(urlSource);
+//    TSource tSource = ExampleWikipediaSource.getSource(client);
 
     log.info("setting up data set");
     TCollection dataSet = client.createDataSet(dataFlowName);
+    TIndexingPolicy tIndexingPolicy = new TIndexingPolicy();
+    tIndexingPolicy.setForeignLanguageIndexing(false);
+    dataSet.setIndexingPolicy(tIndexingPolicy);
+    dataSet = client.updateDataSet(dataSet);
 
     log.info("setting up import flow");
     TImportFlow importFlow = new TImportFlow();
 
-    importFlow.setSourceId(urlSource.getSourceId());
+    importFlow.setSourceId(tSource.getSourceId());
     importFlow.setDataCollectionId(dataSet.getId());
     importFlow.setType(TImportFlowType.MANUAL);
+    importFlow = client.createImportFlow(importFlow);
 
-    client.createImportFlow(importFlow);
+    // save import flow id back to dataset
+    List<Long> importFlowIds = Arrays.asList(importFlow.getImportFlowId());
+    dataSet.setImportFlowIds(importFlowIds);
+    client.updateDataSet(dataSet);
 
     // setup analytical transform
 
@@ -130,14 +136,21 @@ public class ExampleDataFlowAutomator {
     client.createTransform(transform);
   }
 
-  public void executeAndMonitorDataFlow() throws TException, InterruptedException {
+
+  public static void executeAndMonitorDataFlow(Client client, String dataFlowName) throws TException, InterruptedException {
 
     TCollection dataSet = client.getDataSetByName(dataFlowName);
+    List<Long> importFlowIds = dataSet.getImportFlowIds();
 
-    long importFlowId = dataSet.getImportFlowId();
-
-    log.info("executing data flow");
-    client.executeImportFlowById(importFlowId);
+    // start the import
+    importFlowIds.forEach(id -> {
+      try {
+        log.info("executing data flow for {} {}", dataFlowName, id);
+        client.executeImportFlowById(id);
+      } catch (TException ex) {
+        System.out.println(ex.getMessage());
+      }
+    });
 
     log.info("waiting for jobs to start ..");
     List<TJobAbstract> jobs = client.getJobsByDataSetId(dataSet.getId());
@@ -153,32 +166,46 @@ public class ExampleDataFlowAutomator {
     while (!jobs.isEmpty()) {
       Thread.sleep(5000);
       jobs = client.getJobsByDataSetId(dataSet.getId());
+      System.out.println(jobs.get(0).getStatus());
     }
 
     log.info("jobs completed");
   }
 
-  public void tearDownDataFlow() throws TException {
+  public static void tearDownDataFlow(Client client, String dataFlowName) throws TException {
 
     TCollection dataSet = client.getDataSetByName(dataFlowName);
+    TCollection sentimentDataSet = client.getDataSetByName(dataFlowName + " Sentiment");
 
-    client.deleteDataSet(dataFlowName);
+    client.deleteDataSet(dataSet.getId());
 
-    client.deleteDataSet(dataFlowName + " Sentiment");
+    client.deleteDataSet(sentimentDataSet.getId());
   }
 
-  public static void main(String[] args) throws TException, IOException {
+  public void shutdownImport(Client client, String dataSetName) throws TException{
+    TCollection dataSet = client.getDataSetByName(dataSetName);
+    List<Long> ids = dataSet.getImportFlowIds();
+    try {
+      for (int i = 0; i < ids.size(); i++) {
+        List<TImportFlowSchedule> scheduleIds = client
+            .getImportFlowSchedulesByImportFlowId(ids.get(i));
+        for (int j = 0; j < scheduleIds.size(); j++) {
+          client.deleteImportFlowSchedule(scheduleIds.get(j).getImportFlowId());
+        }
+      }
+    } catch (NullPointerException np){
+      //
+    }
+  }
 
-    final String propertiesFilename = "client.properties";
-    final URL propertiesUrl = Resources.getResource(propertiesFilename);
+  public static void main(String[] args) throws TException, IOException, InterruptedException {
+    String dataFlowName = "exampleDataSet";
 
-    ExampleDataFlowAutomator automator = new ExampleDataFlowAutomator("test data", "", propertiesUrl.openStream());
+    Client client = connect();
 
-    automator.setupDataFlow();
-
-    //automator.executeAndMonitorDataFlow();
-
-    //automator.tearDownDataFlow();
+    setupDataFlow(client, dataFlowName);
+    executeAndMonitorDataFlow(client, dataFlowName);
+    tearDownDataFlow(client, dataFlowName);
   }
 
 }

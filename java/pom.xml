@@ -137,7 +137,6 @@
             <artifactId>koverse-thrift</artifactId>
             <version>${koverse.version}</version>
         </dependency>
-
         <dependency>
             <groupId>com.koverse</groupId>
             <artifactId>koverse-sdk</artifactId>
@@ -176,7 +175,12 @@
             <version>1.6.1</version>
             <scope>provided</scope>
         </dependency>
-
+        <!-- https://mvnrepository.com/artifact/org.json4s/json4s-ast -->
+        <dependency>
+            <groupId>org.json4s</groupId>
+            <artifactId>json4s-ast_2.10</artifactId>
+            <version>3.2.10</version>
+        </dependency>
         <!-- spark-testing-base dependencies -->
         <dependency>
             <groupId>com.holdenkarau</groupId>
@@ -197,7 +201,6 @@
             <version>1.18.4</version>
         </dependency>
         <!-- end spark-testing-base dependencies -->
-
     </dependencies>
 
     <repositories>
