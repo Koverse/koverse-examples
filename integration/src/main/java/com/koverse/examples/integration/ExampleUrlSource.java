@@ -20,7 +20,6 @@ package com.koverse.examples.integration;
 import static com.koverse.com.google.common.base.Predicates.notNull;
 import static com.koverse.com.google.common.collect.Lists.newArrayList;
 
-import com.koverse.client.thrift.Client;
 import com.koverse.com.google.common.base.Function;
 import com.koverse.com.google.common.base.Splitter;
 import com.koverse.com.google.common.collect.FluentIterable;
@@ -28,10 +27,6 @@ import com.koverse.sdk.data.Parameter;
 import com.koverse.sdk.source.AbstractFileBasedSource;
 import com.koverse.sdk.source.ImportSourcePath;
 
-import com.koverse.thrift.dataflow.TSource;
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

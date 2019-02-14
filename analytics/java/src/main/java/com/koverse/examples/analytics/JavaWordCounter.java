@@ -44,15 +44,11 @@ public class JavaWordCounter implements java.io.Serializable {
   public JavaRDD<SimpleRecord> count(JavaRDD<SimpleRecord> inputRecordsRdd) {
 
     // split the text in the records into words
-    JavaRDD<String> words = inputRecordsRdd.flatMap(record -> {
-      return Lists.newArrayList(record.get(textFieldName).toString()
-          .split(tokenizationString));
-    });
+    JavaRDD<String> words = inputRecordsRdd.flatMap(
+        record -> Lists.newArrayList(record.get(textFieldName).toString().split(tokenizationString)));
 
     // combine the lower casing of the string with generating the pairs.
-    JavaPairRDD<String, Integer> ones = words.mapToPair(word -> {
-      return new Tuple2<String, Integer>(word.toLowerCase().trim(), 1);
-    });
+    JavaPairRDD<String, Integer> ones = words.mapToPair(word -> new Tuple2<>(word.toLowerCase().trim(), 1));
 
     // sum up the counts for each word
     JavaPairRDD<String, Integer> wordCountRdd = ones

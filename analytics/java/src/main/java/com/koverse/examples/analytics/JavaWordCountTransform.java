@@ -27,6 +27,7 @@ import org.apache.spark.api.java.JavaRDD;
 
 public class JavaWordCountTransform extends JavaSparkTransform {
 
+  public static final String WORD_COUNT_TYPE_ID = "example-word-count-transform";
   private static final String TEXT_FIELD_NAME_PARAMETER = "textFieldName";
   
   /**
@@ -95,7 +96,7 @@ public class JavaWordCountTransform extends JavaSparkTransform {
   @Override
   public String getTypeId() {
 
-    return "javaWordCountExample";
+    return WORD_COUNT_TYPE_ID;
   }
 
   /**
@@ -116,6 +117,6 @@ public class JavaWordCountTransform extends JavaSparkTransform {
    */
   @Override
   public String getDescription() {
-    return "This is the Java Word Count Example Transform";
+    return "Example Word Count Transform";
   }
 }
