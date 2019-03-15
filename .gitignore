@@ -1,9 +1,28 @@
-.DS_Store
-.idea/
 analytics/java/target/
 automation/target/
 integration/target/
-*.iml
 
-*.zip
+# artifacts
 *.class
+*.log
+*.zip
+.cache
+.history
+.lib/
+dependency-reduced-pom.xml
+dist/*
+lib_managed/
+project/boot/
+project/plugins/project/
+src_managed/
+target/
+
+# IDE settings
+*.iml
+.classpath
+.idea
+.project
+.scala_dependencies
+.settings
+.worksheet
+.DS_Store
