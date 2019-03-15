@@ -5,3 +5,5 @@ automation/target/
 integration/target/
 *.iml
 
+*.zip
+*.class
