@@ -6,7 +6,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <koverse.version>2.10.0-SNAPSHOT</koverse.version>
+        <koverse.version>2.10.3-SNAPSHOT</koverse.version>
     </properties>
 
     <groupId>com.koverse.examples</groupId>
@@ -41,11 +41,21 @@
             <artifactId>koverse-thrift-client</artifactId>
             <version>${koverse.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.koverse</groupId>
+            <artifactId>koverse-thrift</artifactId>
+            <version>${koverse.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.koverse</groupId>
+            <artifactId>koverse-sdk-thrift</artifactId>
+            <version>2.10.3-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
