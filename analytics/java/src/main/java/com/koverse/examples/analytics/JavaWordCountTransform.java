@@ -16,107 +16,89 @@
 
 package com.koverse.examples.analytics;
 
-import com.koverse.com.google.common.collect.Lists;
 import com.koverse.sdk.Version;
 import com.koverse.sdk.data.Parameter;
 import com.koverse.sdk.data.SimpleRecord;
-import com.koverse.sdk.transform.spark.JavaSparkTransform;
-import com.koverse.sdk.transform.spark.JavaSparkTransformContext;
-
+import com.koverse.sdk.transform.java.RDDTransform;
+import com.koverse.sdk.transform.java.RDDTransformContext;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
+import scala.Tuple2;
 
-public class JavaWordCountTransform extends JavaSparkTransform {
 
-  public static final String WORD_COUNT_TYPE_ID = "example-word-count-transform";
-  private static final String TEXT_FIELD_NAME_PARAMETER = "textFieldName";
-  
-  /**
-   * Koverse calls this method to execute your transform.
-   *
-   * @param context The context of this spark execution
-   * @return The resulting RDD of this transform execution.
-   *         It will be applied to the output collection.
-   */
+import java.util.ArrayList;
+import java.util.Arrays;
+
+public class JavaWordCountTransform implements RDDTransform {
+
+  private static final String TEXT_FIELD_PARAM = "textFieldParam";
+
   @Override
-  protected JavaRDD<SimpleRecord> execute(JavaSparkTransformContext context) {
+  public JavaRDD<SimpleRecord> execute(RDDTransformContext sparkTransformContext) {
 
-    // This transform assumes there is a single input Data Collection
-    String inputCollectionId = context.getInputCollectionIds().get(0);
+    final String textField = sparkTransformContext.getParameters().get(TEXT_FIELD_PARAM);
 
-    // Get the JavaRDD<SimpleRecord> that represents the input Data Collection
-    JavaRDD<SimpleRecord> inputRecordsRdd = context.getInputCollectionRdds().get(inputCollectionId);
+    JavaRDD<SimpleRecord> rdd =
+        sparkTransformContext.getJavaRDDs().values().iterator().next();
 
-    // for each Record, tokenize the specified text field and count each occurrence
-    final String fieldName = context.getParameters().get(TEXT_FIELD_NAME_PARAMETER);
-    final JavaWordCounter wordCounter = new JavaWordCounter(fieldName, "['\".?!,:;\\s]+");
-    
-    return wordCounter.count(inputRecordsRdd);
+    JavaRDD<String> words = rdd
+        .filter((Function<SimpleRecord, Boolean>) t1 -> t1.containsKey(textField))
+        .flatMap((FlatMapFunction<SimpleRecord, String>) t ->
+            Arrays.asList(t.get(textField).toString().toLowerCase().split("\\s+")).iterator());
+
+    // calculate counts
+    return words.mapToPair((PairFunction<String, String, Integer>) t -> new Tuple2<>(t, 1))
+        .reduceByKey((Function2<Integer, Integer, Integer>) (a, b) -> a + b)
+        .map((Function<Tuple2<String, Integer>, SimpleRecord>) t1 -> {
+          SimpleRecord r = new SimpleRecord();
+          r.put("word", t1._1);
+          r.put("count", t1._2);
+          return r;
+        });
   }
 
-  /*
-   * The following provide metadata about the Transform used for registration
-   * and display in Koverse.
-   */
-
-  /**
-   * Get the name of this transform. It must not be an empty string.
-   *
-   * @return The name of this transform.
-   */
-  @Override
-  public String getName() {
-
-    return "Java Word Count Example";
-  }
-
-  /**
-   * Get the parameters of this transform.  The returned iterable can
-   * be immutable, as it will not be altered.
-   *
-   * @return The parameters of this transform.
-   */
   @Override
   public Iterable<Parameter> getParameters() {
-
-    // This parameter will allow the user to input the field name of their Records which 
-    // contains the strings that they want to tokenize and count the words from. By parameterizing
-    // this field name, we can run this Transform on different Records in different Collections
-    // without changing the code
-    Parameter textParameter
-            = new Parameter(TEXT_FIELD_NAME_PARAMETER, "Text Field Name", Parameter.TYPE_STRING);
-    return Lists.newArrayList(textParameter);
+    ArrayList<Parameter> params = new ArrayList<Parameter>();
+    params.add(Parameter.newBuilder()
+        .parameterName(TEXT_FIELD_PARAM)
+        .displayName("Text field")
+        .hint("Field containing text.")
+        .type(Parameter.TYPE_COLLECTION_FIELD)
+        .defaultValue("")
+        .required(true)
+        .build());
+    return params;
   }
 
-  /**
-   * Get the programmatic identifier for this transform.  It must not
-   * be an empty string and must contain only alpha numeric characters.
-   *
-   * @return The programmatic id of this transform.
-   */
+  @Override
+  public String getName() {
+    return "Spark Word Count";
+  }
+
   @Override
   public String getTypeId() {
-
-    return WORD_COUNT_TYPE_ID;
+    return "spark-word-count";
   }
 
-  /**
-   * Get the version of this transform.
-   *
-   * @return The version of this transform.
-   */
   @Override
   public Version getVersion() {
-
-    return new Version(0, 0, 1);
+    return new Version(0, 1, 0);
   }
 
-  /**
-   * Get the description of this transform.
-   *
-   * @return The the description of this transform.
-   */
+  @Override
+  public boolean supportsIncrementalProcessing() {
+    return false;
+  }
+
+
   @Override
   public String getDescription() {
-    return "Example Word Count Transform";
+    return "Count all words in the text field of the input data sets and write the counts for each word to the output data set. "
+        + "Uses Apache Spark.";
   }
+
 }

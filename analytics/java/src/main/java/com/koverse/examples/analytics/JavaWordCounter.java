@@ -23,6 +23,8 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import scala.Tuple2;
 
+import static com.koverse.com.google.common.collect.Lists.newArrayList;
+
 public class JavaWordCounter implements java.io.Serializable {
 
   private static final long serialVersionUID = 8741666028339586272L;
@@ -45,7 +47,7 @@ public class JavaWordCounter implements java.io.Serializable {
 
     // split the text in the records into words
     JavaRDD<String> words = inputRecordsRdd.flatMap(
-        record -> Lists.newArrayList(record.get(textFieldName).toString().split(tokenizationString)));
+        record -> newArrayList(record.get(textFieldName).toString().split(tokenizationString)).iterator());
 
     // combine the lower casing of the string with generating the pairs.
     JavaPairRDD<String, Integer> ones = words.mapToPair(word -> new Tuple2<>(word.toLowerCase().trim(), 1));

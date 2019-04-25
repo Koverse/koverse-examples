@@ -16,24 +16,41 @@
 
 package com.koverse.examples.analytics;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import com.koverse.com.google.common.collect.Lists;
 import com.koverse.sdk.data.SimpleRecord;
-
-import com.holdenkarau.spark.testing.SharedJavaSparkContext;
+import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * These tests leverage the great work at https://github.com/holdenk/spark-testing-base
  */
-public class JavaWordCounterTest  extends SharedJavaSparkContext {
+public class JavaWordCounterTest {
+  private JavaSparkContext jsc;
 
+  @Before
+  public void setup() {
+    SparkConf sparkConf = new SparkConf(true);
+    sparkConf.setMaster("local");
+    sparkConf.setAppName("JavaWordCounterTest");
+    SparkContext sparkContext = new SparkContext(sparkConf);
+    jsc = new JavaSparkContext(sparkContext);
+  }
+
+  @After
+  public void teardown() {
+    jsc.close();
+  }
   @Test
   public void rddTest() {
     // Create the SimpleRecords we will put in our input RDD
@@ -45,7 +62,7 @@ public class JavaWordCounterTest  extends SharedJavaSparkContext {
     record1.put("id", 1);
     
     // Create the input RDD
-    JavaRDD<SimpleRecord> inputRecordsRdd = jsc().parallelize(Lists.newArrayList(record0, record1));
+    JavaRDD<SimpleRecord> inputRecordsRdd = jsc.parallelize(Lists.newArrayList(record0, record1));
     
     // Create and run the word counter to get the output RDD
     JavaWordCounter wordCounter = new JavaWordCounter("text", "['\".?!,:;\\s]+");

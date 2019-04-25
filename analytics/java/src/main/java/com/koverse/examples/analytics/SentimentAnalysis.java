@@ -1,22 +1,22 @@
 package com.koverse.examples.analytics;
 
-import static com.koverse.com.google.common.collect.Lists.newArrayList;
-
 import com.koverse.sdk.Version;
 import com.koverse.sdk.data.Parameter;
-import com.koverse.sdk.transform.spark.sql.JavaSparkDataFrameTransform;
-import com.koverse.sdk.transform.spark.sql.JavaSparkDataFrameTransformContext;
-
+import com.koverse.sdk.transform.java.DataFrameTransform;
+import com.koverse.sdk.transform.java.DataFrameTransformContext;
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.types.DataTypes;
 
 import java.util.Map;
 
+import static com.koverse.com.google.common.collect.Lists.newArrayList;
 
-public class SentimentAnalysis extends JavaSparkDataFrameTransform {
+
+public class SentimentAnalysis implements DataFrameTransform {
 
   /*
    * We’ll begin by defining a set of parameters that our Transform will use to request configuration information from a
@@ -53,9 +53,9 @@ public class SentimentAnalysis extends JavaSparkDataFrameTransform {
    */
 
   @Override
-  protected DataFrame execute(JavaSparkDataFrameTransformContext context) {
-    String textCol = context.getJavaSparkTransformContext().getParameters().get(TEXT_COL_PARAM);
-    String dateCol = context.getJavaSparkTransformContext().getParameters().get(DATE_COL_PARAM);
+  public Dataset<Row> execute(DataFrameTransformContext context) {
+    String textCol = context.getParameters().get(TEXT_COL_PARAM);
+    String dateCol = context.getParameters().get(DATE_COL_PARAM);
 
 
     /*
@@ -68,7 +68,7 @@ public class SentimentAnalysis extends JavaSparkDataFrameTransform {
      */
 
     final Broadcast<Map<String, Integer>> broadcastWordList =
-        context.getJavaSparkTransformContext().getJavaSparkContext().broadcast(AfinnData.getWordList());
+        context.getSparkContext().broadcast(AfinnData.getWordList(), scala.reflect.ClassTag$.MODULE$.apply(Map.class));
 
     /*
      * Since this is a data frame transform Spark expects us to use SQL functions or custom user-defined functions (UDFs).
@@ -101,7 +101,7 @@ public class SentimentAnalysis extends JavaSparkDataFrameTransform {
      * We have to register our UDF in order to use it to create a new column for our data frame:
      */
 
-    context.getSqlContext().udf().register("sentimentUDF", sentimentUDF, DataTypes.DoubleType);
+    context.getSQLContext().udf().register("sentimentUDF", sentimentUDF, DataTypes.DoubleType);
 
     /*
      * Now we’ll grab the data frame created by Koverse from a data set the user has specified. Then we’ll select only the
@@ -114,12 +114,12 @@ public class SentimentAnalysis extends JavaSparkDataFrameTransform {
      * in other groups.
      */
 
-    DataFrame dataFrame = context.getDataFrames().values().iterator().next();
+    Dataset<Row> rowDataset = context.getDataFrames().values().iterator().next();
 
-    return dataFrame
-        .select(dataFrame.col(textCol).alias("text"), dataFrame.col(dateCol))
+   return rowDataset
+       .select(rowDataset.col(textCol).alias("text"), rowDataset.col(dateCol))
         .na().drop()
-        .withColumn("score", functions.callUDF("sentimentUDF", dataFrame.col("text")));
+        .withColumn("score", functions.callUDF("sentimentUDF", rowDataset.col("text")));
   }
 
   /*
@@ -145,6 +145,11 @@ public class SentimentAnalysis extends JavaSparkDataFrameTransform {
   @Override
   public Version getVersion() {
     return new Version(0, 1, 0);
+  }
+
+  @Override
+  public boolean supportsIncrementalProcessing() {
+    return false;
   }
 
 }
