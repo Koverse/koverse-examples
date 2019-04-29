@@ -18,12 +18,11 @@ package com.koverse.example.spark
 
 import com.koverse.sdk.Version
 import com.koverse.sdk.data.Parameter
-import com.koverse.sdk.transform.java.{DataFrameTransform, DataFrameTransformContext}
-import org.apache.spark.sql.DataFrame
+import com.koverse.sdk.transform.scala.{DatasetTransform, DatasetTransformContext}
+import org.apache.spark.sql.Dataset
 
-import scala.collection.JavaConverters.seqAsJavaListConverter
 
-class WordCountDataFrameTransform extends DataFrameTransform {
+class WordCountDatasetTransform extends DatasetTransform {
 
   private val TEXT_FIELD_NAME_PARAMETER = "textFieldName"
 
@@ -31,23 +30,25 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     * Koverse calls this method to execute your transform.
     *
     * @param context The context of this spark execution
-    * @return The resulting RDD of this transform execution.
+    * @return The resulting Dataset of this transform execution.
     *         It will be applied to the output collection.
     */
-  override def execute(context: DataFrameTransformContext): DataFrame = {
+  override def execute(context: DatasetTransformContext): Dataset[WordCount] = {
 
-    // This transform assumes there is a single input Data Collection
-    val inputCollectionId = context.getDatasetIds.get(0)
-
-    // Get the RDD[SimpleRecord] that represents the input Data Collection
-    val inputRecordsRdd = context.getDataFrames.get(inputCollectionId)
+    val spark = context.getSparkSession
 
     // for each Record, tokenize the specified text field and count each occurence
-    val textFieldName = context.getParameters().get(TEXT_FIELD_NAME_PARAMETER)
+    val input = context.getDatasets.get(TEXT_FIELD_NAME_PARAMETER).asInstanceOf[Dataset[Message]]
+
+    val textFieldName = context.getParameters.get(TEXT_FIELD_NAME_PARAMETER)
 
     // Create the WordCounter which will perform the logic of our Transform
-    val wordCounter = new WordCounter(textFieldName, """['".?!,:;\s]+""")
-    wordCounter.count(inputRecordsRdd)
+    val tokenizationString =
+      """['".?!,:;\s]+"""
+
+    // Create the WordCounter which will perform the logic of our Transform
+    val wordCounter = new WordCounter(textFieldName.get, """['".?!,:;\s]+""")
+    wordCounter.count(input, spark)
 
   }
 
@@ -69,14 +70,26 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The parameters of this transform.
     */
-  override def getParameters: java.lang.Iterable[Parameter] = {
+  /**
+    * Get the parameters of this transform.  The returned iterable can
+    * be immutable, as it will not be altered.
+    *
+    * @return The parameters of this transform.
+    */
+  override def getParameters: scala.collection.immutable.Seq[Parameter] = {
 
     // This parameter will allow the user to input the field name of their Records which
     // contains the strings that they want to tokenize and count the words from. By parameterizing
     // this field name, we can run this Transform on different Records in different Collections
     // without changing the code
-    val textParameter = new Parameter(TEXT_FIELD_NAME_PARAMETER, "Text Field Name", Parameter.TYPE_STRING)
-    Seq(textParameter).asJava
+    val textParameter = Parameter.newBuilder
+      .parameterName(TEXT_FIELD_NAME_PARAMETER)
+      .displayName("Text Field Name")
+      .`type`(Parameter.TYPE_STRING)
+      .defaultValue("")
+      .required(true)
+      .build
+    scala.collection.immutable.Seq(textParameter)
   }
 
   /**
@@ -99,7 +112,14 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The the description of this transform.
     */
-  override def getDescription: String = "This is the Word Count Example"
+  override def getDescription: String = "This is the Word Count Dataset Example"
 
-  override def supportsIncrementalProcessing: Boolean = false
+  override def supportsIncrementalProcessing(): Boolean = true
+
+  override def getDatasetBeans: scala.collection.immutable.Map[String, AnyRef] = {
+    val datasetBeans: scala.collection.immutable.Map[String, AnyRef] =
+      scala.collection.immutable.HashMap(TEXT_FIELD_NAME_PARAMETER -> classOf[WordCount])
+    datasetBeans
+  }
+
 }
