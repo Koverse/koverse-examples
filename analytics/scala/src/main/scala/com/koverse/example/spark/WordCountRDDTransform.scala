@@ -78,7 +78,16 @@ class WordCountRDDTransform extends RDDTransform {
       .defaultValue("")
       .required(true)
       .build
-    scala.collection.immutable.Seq(textParameter)
+
+    val inputDatasetParameter = Parameter.newBuilder
+      .parameterName("inputDataset")
+      .displayName("Dataset containing input records")
+      .`type`(Parameter.TYPE_INPUT_COLLECTION)
+      .required(true)
+      .build
+
+    scala.collection.immutable.Seq(textParameter, inputDatasetParameter)
+
   }
 
   /**

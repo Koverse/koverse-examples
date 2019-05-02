@@ -18,14 +18,13 @@ package com.koverse.example.spark
 
 import com.koverse.sdk.Version
 import com.koverse.sdk.data.Parameter
-import com.koverse.sdk.transform.java.{DataFrameTransform, DataFrameTransformContext}
+import com.koverse.sdk.transform.scala.{DataFrameTransform, DataFrameTransformContext}
 import org.apache.spark.sql.DataFrame
-
-import scala.collection.JavaConverters.seqAsJavaListConverter
 
 class WordCountDataFrameTransform extends DataFrameTransform {
 
   private val TEXT_FIELD_NAME_PARAMETER = "textFieldName"
+  private val INPUT_DATASET = "inputDataset"
 
   /**
     * Koverse calls this method to execute your transform.
@@ -37,17 +36,16 @@ class WordCountDataFrameTransform extends DataFrameTransform {
   override def execute(context: DataFrameTransformContext): DataFrame = {
 
     // This transform assumes there is a single input Data Collection
-    val inputCollectionId = context.getDatasetIds.get(0)
-
-    // Get the RDD[SimpleRecord] that represents the input Data Collection
-    val inputRecordsRdd = context.getDataFrames.get(inputCollectionId)
+    val inputCollectionId = context.getParameters.get(INPUT_DATASET)
 
     // for each Record, tokenize the specified text field and count each occurence
-    val textFieldName = context.getParameters().get(TEXT_FIELD_NAME_PARAMETER)
+    val textFieldName = context.getParameters.get(TEXT_FIELD_NAME_PARAMETER)
+
+    val inputDataframe = context.getDataFrames.get(inputCollectionId.get)
 
     // Create the WordCounter which will perform the logic of our Transform
-    val wordCounter = new WordCounter(textFieldName, """['".?!,:;\s]+""")
-    wordCounter.count(inputRecordsRdd)
+    val wordCounter = new WordCounter(textFieldName.get, """['".?!,:;\s]+""")
+    wordCounter.count(inputDataframe.get)
 
   }
 
@@ -69,14 +67,28 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The parameters of this transform.
     */
-  override def getParameters: java.lang.Iterable[Parameter] = {
+  override def getParameters: scala.collection.immutable.Seq[Parameter] = {
 
     // This parameter will allow the user to input the field name of their Records which
     // contains the strings that they want to tokenize and count the words from. By parameterizing
     // this field name, we can run this Transform on different Records in different Collections
     // without changing the code
-    val textParameter = new Parameter(TEXT_FIELD_NAME_PARAMETER, "Text Field Name", Parameter.TYPE_STRING)
-    Seq(textParameter).asJava
+    val textParameter = Parameter.newBuilder
+      .parameterName(TEXT_FIELD_NAME_PARAMETER)
+      .displayName("Text Field Name")
+      .`type`(Parameter.TYPE_STRING)
+      .defaultValue("")
+      .required(true)
+      .build
+
+    val inputDatasetParameter = Parameter.newBuilder
+      .parameterName(INPUT_DATASET)
+      .displayName("Dataset containing input records")
+      .`type`(Parameter.TYPE_INPUT_COLLECTION)
+      .required(true)
+      .build
+
+    scala.collection.immutable.Seq(textParameter, inputDatasetParameter)
   }
 
   /**
