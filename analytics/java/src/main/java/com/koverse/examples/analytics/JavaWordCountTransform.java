@@ -51,7 +51,7 @@ public class JavaWordCountTransform implements RDDTransform {
 
     // calculate counts
     return words.mapToPair((PairFunction<String, String, Integer>) t -> new Tuple2<>(t, 1))
-        .reduceByKey((Function2<Integer, Integer, Integer>) (a, b) -> a + b)
+        .reduceByKey((Function2<Integer, Integer, Integer>) Integer::sum)
         .map((Function<Tuple2<String, Integer>, SimpleRecord>) t1 -> {
           SimpleRecord r = new SimpleRecord();
           r.put("word", t1._1);
@@ -62,7 +62,7 @@ public class JavaWordCountTransform implements RDDTransform {
 
   @Override
   public Iterable<Parameter> getParameters() {
-    ArrayList<Parameter> params = new ArrayList<Parameter>();
+    ArrayList<Parameter> params = new ArrayList<>();
     params.add(Parameter.newBuilder()
         .parameterName(TEXT_FIELD_PARAM)
         .displayName("Text field")
@@ -71,6 +71,14 @@ public class JavaWordCountTransform implements RDDTransform {
         .defaultValue("")
         .required(true)
         .build());
+
+    params.add(Parameter.newBuilder()
+        .required(true)
+        .type(Parameter.TYPE_INPUT_COLLECTION)
+        .parameterName("inputDataset")
+        .displayName("Dataset containing input records")
+        .build());
+
     return params;
   }
 
