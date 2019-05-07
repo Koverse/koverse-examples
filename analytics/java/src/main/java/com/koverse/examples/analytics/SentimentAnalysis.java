@@ -42,6 +42,12 @@ public class SentimentAnalysis implements DataFrameTransform {
             .parameterName(DATE_COL_PARAM)
             .required(Boolean.TRUE)
             .type(Parameter.TYPE_COLLECTION_FIELD)
+            .build(),
+        Parameter.newBuilder()
+            .required(true)
+            .type(Parameter.TYPE_INPUT_COLLECTION)
+            .parameterName("inputDataset")
+            .displayName("Dataset containing input records")
             .build());
   }
 

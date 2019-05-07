@@ -16,15 +16,12 @@
 
 package com.koverse.example.spark
 
-import com.koverse.sdk.transform.spark.JavaSparkTransform
-import com.koverse.sdk.transform.spark.JavaSparkTransformContext
-import com.koverse.sdk.data.SimpleRecord
-import org.apache.spark.api.java.JavaRDD
 import com.koverse.sdk.Version
-import com.koverse.sdk.data.Parameter
+import com.koverse.sdk.data.{Parameter, SimpleRecord}
+import com.koverse.sdk.transform.spark.{JavaSparkTransform, JavaSparkTransformContext}
+import org.apache.spark.api.java.JavaRDD
 
-import scala.collection.JavaConverters.asScalaSetConverter
-import scala.collection.JavaConverters.seqAsJavaListConverter
+import scala.collection.JavaConverters.{asScalaSetConverter, seqAsJavaListConverter}
 
 class JoinTransform extends JavaSparkTransform {
 
@@ -41,20 +38,20 @@ class JoinTransform extends JavaSparkTransform {
   override def execute(context: JavaSparkTransformContext): JavaRDD[SimpleRecord] = {
 
     // This transform assumes there are two input Data Collection which will be joined
-    val inputCollection1Id = context.getInputCollectionIds().get(0)
-    val inputCollection2Id = context.getInputCollectionIds().get(1)
+    val inputCollection1Id = context.getInputCollectionIds.get(0)
+    val inputCollection2Id = context.getInputCollectionIds.get(1)
 
     // Get the RDD[SimpleRecord] that represents each input Data Collection
     val inputRecords1Rdd = context.getInputCollectionRdds.get(inputCollection1Id).rdd
     val inputRecords2Rdd = context.getInputCollectionRdds.get(inputCollection2Id).rdd
 
     // get the field names for each collection which we are going to join on
-    val collection1FieldName = context.getParameters().get(COLLECTION1_JOIN_FIELD_NAME_PARAMETER)
-    val collection2FieldName = context.getParameters().get(COLLECTION2_JOIN_FIELD_NAME_PARAMETER)
+    val collection1FieldName = context.getParameters.get(COLLECTION1_JOIN_FIELD_NAME_PARAMETER)
+    val collection2FieldName = context.getParameters.get(COLLECTION2_JOIN_FIELD_NAME_PARAMETER)
 
     // Map the RDDs to be an RDD[(key, SimpleRecord)] as is required to join in Spark
-    val inputPairs1Rdd = inputRecords1Rdd.map(record => (record.get(collection1FieldName).toString(), record))
-    val inputPairs2Rdd = inputRecords2Rdd.map(record => (record.get(collection2FieldName).toString(), record))
+    val inputPairs1Rdd = inputRecords1Rdd.map(record => (record.get(collection1FieldName).toString, record))
+    val inputPairs2Rdd = inputRecords2Rdd.map(record => (record.get(collection2FieldName).toString, record))
 
     // Perform the join
     val joinedRecordsRdd = inputPairs1Rdd.join(inputPairs2Rdd)
@@ -63,8 +60,8 @@ class JoinTransform extends JavaSparkTransform {
     val outputRdd = joinedRecordsRdd.map({ case(key, (record1, record2)) => {
 
       val record = new SimpleRecord()
-      record1.entrySet().asScala.foreach(entry => record.put(entry.getKey(), entry.getValue()))
-      record2.entrySet().asScala.foreach(entry => record.put(entry.getKey(), entry.getValue()))
+      record1.entrySet().asScala.foreach(entry => record.put(entry.getKey, entry.getValue))
+      record2.entrySet().asScala.foreach(entry => record.put(entry.getKey, entry.getValue))
       record
     }})
 
@@ -81,7 +78,7 @@ class JoinTransform extends JavaSparkTransform {
    *
    * @return The name of this transform.
    */
-  override def getName(): String = "Join Example"
+  override def getName: String = "Join Example"
 
   /**
    * Get the parameters of this transform.  The returned iterable can
@@ -89,7 +86,7 @@ class JoinTransform extends JavaSparkTransform {
    *
    * @return The parameters of this transform.
    */
-  override def getParameters(): java.lang.Iterable[Parameter] = {
+  override def getParameters: java.lang.Iterable[Parameter] = {
 
     // This parameter will allow the user to input the field names of their Records
     // from each Collection which to join on
@@ -105,19 +102,19 @@ class JoinTransform extends JavaSparkTransform {
    *
    * @return The programmatic id of this transform.
    */
-  override def getTypeId(): String = "joinExample"
+  override def getTypeId: String = "joinExample"
 
   /**
    * Get the version of this transform.
    *
    * @return The version of this transform.
    */
-  override def getVersion(): Version = new Version(0, 0, 1)
+  override def getVersion: Version = new Version(0, 0, 1)
 
   /**
    * Get the description of this transform.
    *
    * @return The the description of this transform.
    */
-  override def getDescription(): String = "This is the Scala Join Example Transform"
+  override def getDescription: String = "This is the Scala Join Example Transform"
 }

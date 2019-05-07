@@ -20,7 +20,7 @@ import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
 import org.apache.spark.mllib.linalg.{SparseVector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.{DataFrame, Encoders}
 
 object NaiveBayesHelper {
 
@@ -31,10 +31,11 @@ object NaiveBayesHelper {
     val hashTF:HashingTF = new HashingTF().setInputCol("words").setOutputCol("features").setNumFeatures(20)
     val featureData:DataFrame = hashTF.transform(wordsData)
 
+    val labeledPointEncoder = Encoders.product[LabeledPoint]
+
     val dataDataFrame:DataFrame = featureData.select("PlayTennis","features")
     dataDataFrame.map { f =>
       LabeledPoint(f.get(0).asInstanceOf[Double], Vectors.dense(f.get(1).asInstanceOf[SparseVector].toArray))
-    }
+    }(labeledPointEncoder).toJavaRDD
   }
-
 }
