@@ -20,12 +20,12 @@ limitations under the License.
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.koverse</groupId>
   <artifactId>koverse-examples-analytics-scala</artifactId>
-  <version>3.0.0-rc1-SNAPSHOT</version>
+  <version>3.0.2-SNAPSHOT</version>
   <name>${project.artifactId}</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <koverse.version>3.0.0-rc1-SNAPSHOT</koverse.version>
+    <koverse.version>3.0.2-SNAPSHOT</koverse.version>
   </properties>
 
   <!-- Project Metadata specific to your organization -->
@@ -146,27 +146,6 @@ limitations under the License.
             <phase>compile</phase>
             <goals>
               <goal>compile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.5.3</version>
-        <configuration>
-          <descriptors>
-            <descriptor>assembly.xml</descriptor>
-          </descriptors>
-          <finalName>PySparkExampleAddon</finalName>
-        </configuration>
-
-        <executions>
-          <execution>
-            <id>bundle</id>
-            <phase>package</phase>
-            <goals>
-              <goal>assembly</goal>
             </goals>
           </execution>
         </executions>
@@ -432,10 +411,12 @@ limitations under the License.
       <version>2.3.2</version>
       <scope>provided</scope>
     </dependency>
+
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
       <version>3.1.1</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>

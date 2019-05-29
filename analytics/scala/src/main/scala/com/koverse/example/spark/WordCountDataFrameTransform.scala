@@ -59,7 +59,7 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The name of this transform.
     */
-  override def getName: String = "Word Count Example"
+  override def getName: String = "Word Count DataFrame Example"
 
   /**
     * Get the parameters of this transform.  The returned iterable can
@@ -97,7 +97,7 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The programmatic id of this transform.
     */
-  override def getTypeId: String = "wordCountExample"
+  override def getTypeId: String = "wordCountDataFrameExample"
 
   /**
     * Get the version of this transform.
@@ -111,7 +111,7 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The the description of this transform.
     */
-  override def getDescription: String = "This is the Word Count Example"
+  override def getDescription: String = "This is the Word Count DataFrame Example"
 
   override def supportsIncrementalProcessing: Boolean = false
 }
