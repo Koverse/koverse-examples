@@ -98,7 +98,7 @@ public class TestUtils {
       Map<String, TConfigValue> transformOptions)
       throws TException {
 
-    System.out.println("setting up transform");
+    System.out.println("setting up transform: " + transformType);
     TTransform transform = new TTransform();
 
     transform.setType(transformType);
