@@ -20,12 +20,12 @@ limitations under the License.
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.koverse</groupId>
   <artifactId>koverse-examples-analytics-scala</artifactId>
-  <version>3.0.2-SNAPSHOT</version>
+  <version>3.0.1</version>
   <name>${project.artifactId}</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <koverse.version>3.0.2-SNAPSHOT</koverse.version>
+    <koverse.version>3.0.1</koverse.version>
   </properties>
 
   <!-- Project Metadata specific to your organization -->
