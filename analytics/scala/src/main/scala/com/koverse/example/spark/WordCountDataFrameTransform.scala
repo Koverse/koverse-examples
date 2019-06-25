@@ -35,17 +35,15 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     */
   override def execute(context: DataFrameTransformContext): DataFrame = {
 
-    // This transform assumes there is a single input Data Collection
-    val inputCollectionId = context.getParameters.get(INPUT_DATASET)
-
     // for each Record, tokenize the specified text field and count each occurence
-    val textFieldName = context.getParameters.get(TEXT_FIELD_NAME_PARAMETER)
+    val textFieldName = context.getParameters.get(TEXT_FIELD_NAME_PARAMETER).get
 
-    val inputDataframe = context.getDataFrames.get(inputCollectionId.get)
+    // grab the data frames
+    val inputDataframe = context.getDataFrames.values.iterator.next;
 
     // Create the WordCounter which will perform the logic of our Transform
-    val wordCounter = new WordCounter(textFieldName.get, """['".?!,:;\s]+""")
-    wordCounter.count(inputDataframe.get)
+    val wordCounter = new WordCounter(textFieldName, """['".?!,:;\s]+""")
+    wordCounter.count(inputDataframe)
 
   }
 

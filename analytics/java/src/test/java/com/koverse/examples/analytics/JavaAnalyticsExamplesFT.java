@@ -63,7 +63,7 @@ public class JavaAnalyticsExamplesFT {
 
     /* comment this out if you want to see the data sets in the UI */
     // tidy up afterward
-//    utils.tearDownDataFlow(importDataSet.getName());
+    utils.tearDownDataFlow(importDataSet.getName());
 
   }
 

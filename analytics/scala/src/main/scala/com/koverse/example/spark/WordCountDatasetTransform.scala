@@ -39,20 +39,17 @@ class WordCountDatasetTransform extends DatasetTransform {
     */
   override def execute(context: DatasetTransformContext): Dataset[WordCount] = {
 
-    val spark = context.getSparkSession
-
     // for each Record, tokenize the specified text field and count each occurence
     val input = context.getDatasets.get(INPUT_DATA_SET_PARAMETER).get.asInstanceOf[Dataset[Message]]
-
     val textFieldName = context.getParameters.get(TEXT_FIELD_NAME_PARAMETER)
-
+    
     // Create the WordCounter which will perform the logic of our Transform
     val tokenizationString =
       """['".?!,:;\s]+"""
 
     // Create the WordCounter which will perform the logic of our Transform
     val wordCounter = new WordCounter(textFieldName.get, """['".?!,:;\s]+""")
-    wordCounter.count(input, spark)
+    wordCounter.count(input, context.getSparkSession)
 
   }
 
