@@ -57,7 +57,7 @@ class WordCountRDDTransform extends RDDTransform {
    *
    * @return The name of this transform.
    */
-  override def getName: String = "Word Count Example"
+  override def getName: String = "Word Count RDD Example"
 
   /**
    * Get the parameters of this transform.  The returned iterable can
@@ -96,7 +96,7 @@ class WordCountRDDTransform extends RDDTransform {
    *
    * @return The programmatic id of this transform.
    */
-  override def getTypeId: String = "wordCountExample"
+  override def getTypeId: String = "wordCountRddExample"
 
   /**
    * Get the version of this transform.
@@ -110,7 +110,7 @@ class WordCountRDDTransform extends RDDTransform {
    *
    * @return The the description of this transform.
    */
-  override def getDescription: String = "This is the Word Count Example"
+  override def getDescription: String = "This is the Word Count RDD Example"
 
   override def supportsIncrementalProcessing(): Boolean = false
 }
