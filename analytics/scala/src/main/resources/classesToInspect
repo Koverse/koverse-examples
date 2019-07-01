@@ -4,3 +4,5 @@ com.koverse.example.spark.JoinTransform
 com.koverse.example.spark.JavaWordCountTransform
 com.koverse.example.spark.NaiveBayesTrainedTransform
 com.koverse.example.spark.NaiveBayesPredictTransform
+com.koverse.example.spark.LogisticRegressionTraining
+com.koverse.example.spark.LogisticRegressionDataPrep

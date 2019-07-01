@@ -35,17 +35,17 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     */
   override def execute(context: DataFrameTransformContext): DataFrame = {
 
-    // This transform assumes there is a single input Data Collection
-    val inputCollectionId = context.getParameters.get(INPUT_DATASET)
+
 
     // for each Record, tokenize the specified text field and count each occurence
-    val textFieldName = context.getParameters.get(TEXT_FIELD_NAME_PARAMETER)
+    val textFieldName = context.getParameters.get(TEXT_FIELD_NAME_PARAMETER).get
 
-    val inputDataframe = context.getDataFrames.get(inputCollectionId.get)
+    // grab the data frames
+    val inputDataframe = context.getDataFrames.values.iterator.next;
 
     // Create the WordCounter which will perform the logic of our Transform
-    val wordCounter = new WordCounter(textFieldName.get, """['".?!,:;\s]+""")
-    wordCounter.count(inputDataframe.get)
+    val wordCounter = new WordCounter(textFieldName, """['".?!,:;\s]+""")
+    wordCounter.count(inputDataframe)
 
   }
 
@@ -59,7 +59,7 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The name of this transform.
     */
-  override def getName: String = "Word Count Example"
+  override def getName: String = "Word Count DataFrame Example"
 
   /**
     * Get the parameters of this transform.  The returned iterable can
@@ -97,7 +97,7 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The programmatic id of this transform.
     */
-  override def getTypeId: String = "wordCountExample"
+  override def getTypeId: String = "wordCountDataFrameExample"
 
   /**
     * Get the version of this transform.
@@ -111,7 +111,7 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The the description of this transform.
     */
-  override def getDescription: String = "This is the Word Count Example"
+  override def getDescription: String = "This is the Word Count DataFrame Example"
 
   override def supportsIncrementalProcessing: Boolean = false
 }
