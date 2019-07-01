@@ -38,9 +38,6 @@ class LogisticRegressionTraining extends DataFrameTransform {
 
     def getParameters(): scala.collection.immutable.Seq[Parameter] = {
 
-//        val iterationParameter = new Parameter(, "Max Iterations", )
-//        val regularizationParameter = new Parameter(, "Regularization Variant", )
-//        Seq(iterationParameter, regularizationParameter).asJava
          val iterationParameter = Parameter.newBuilder()
                                 .displayName("Max Iterations")
                                 .parameterName(MAX_ITERATIONS_PARAM)
@@ -59,11 +56,11 @@ class LogisticRegressionTraining extends DataFrameTransform {
                                 .build()
 
         val inputDatasetParameter = Parameter.newBuilder()
-          .parameterName(INPUT_DATASET)
-          .displayName("Dataset containing input records")
-          .`type`(Parameter.TYPE_INPUT_COLLECTION)
-          .required(true)
-          .build()
+                               .parameterName(INPUT_DATASET)
+                               .displayName("Dataset containing input records")
+                               .`type`(Parameter.TYPE_INPUT_COLLECTION)
+                               .required(true)
+                               .build()
 
         scala.collection.immutable.Seq(inputDatasetParameter, iterationParameter, regularizationParameter)
     }
