@@ -16,19 +16,51 @@
 
 package com.koverse.example.spark
 
+import java.io.Serializable
+
 import com.koverse.sdk.Version
 import com.koverse.sdk.data.Parameter
 import com.koverse.sdk.transform.scala.{DatasetTransform, DatasetTransformContext}
 import org.apache.spark.sql.Dataset
 
+case class Message(var article: String, var id: Long) extends Serializable {
 
-case class Message(text: String, id: String)
-case class WordCount(text: String, count: Int)
+  def this() = this("", 0)
+// article must be text and set by textFieldParam value
+  def getArticle: String = article
+
+  def setArticle(article: String): Unit = {
+    this.article = article
+  }
+
+  def getId: Long = id
+
+  def setId(id: Long): Unit = {
+    this.id = id
+  }
+}
+
+case class WordCount(var text: String, var count: Int) extends Serializable {
+
+  def this() = this("", 0)
+
+  def getText: String = text
+
+  def setText(text: String): Unit = {
+    this.text = text
+  }
+
+  def getCount: Int = count
+
+  def setCount(count: Int): Unit = {
+    this.count = count
+  }
+}
 
 class WordCountDatasetTransform extends DatasetTransform {
 
   private val TEXT_FIELD_NAME_PARAMETER = "textFieldName"
-  private val INPUT_DATA_SET_PARAMETER = "inputDataSet"
+  private val INPUT_DATASET = "inputDataset"
 
   /**
     * Koverse calls this method to execute your transform.
@@ -40,7 +72,7 @@ class WordCountDatasetTransform extends DatasetTransform {
   override def execute(context: DatasetTransformContext): Dataset[WordCount] = {
 
     // for each Record, tokenize the specified text field and count each occurence
-    val input = context.getDatasets.get(INPUT_DATA_SET_PARAMETER).get.asInstanceOf[Dataset[Message]]
+    val input = context.getDatasets.get(INPUT_DATASET).get.asInstanceOf[Dataset[Message]]
     val textFieldName = context.getParameters.get(TEXT_FIELD_NAME_PARAMETER)
     
     // Create the WordCounter which will perform the logic of our Transform
@@ -49,7 +81,10 @@ class WordCountDatasetTransform extends DatasetTransform {
 
     // Create the WordCounter which will perform the logic of our Transform
     val wordCounter = new WordCounter(textFieldName.get, """['".?!,:;\s]+""")
-    wordCounter.count(input, context.getSparkSession)
+    val wordCountDataset = wordCounter.count(input, context.getSparkSession)
+    println("wordcount outputDataset: " + wordCountDataset)
+    wordCountDataset.show()
+    wordCountDataset
 
   }
 
@@ -93,7 +128,7 @@ class WordCountDatasetTransform extends DatasetTransform {
       .build
 
     val inputDatasetParameter = Parameter.newBuilder
-      .parameterName(INPUT_DATA_SET_PARAMETER)
+      .parameterName(INPUT_DATASET)
       .displayName("Dataset containing input records")
       .`type`(Parameter.TYPE_INPUT_COLLECTION)
       .required(true)
@@ -129,7 +164,7 @@ class WordCountDatasetTransform extends DatasetTransform {
 
   override def getDatasetBeans: scala.collection.immutable.Map[String, AnyRef] = {
     val datasetBeans: scala.collection.immutable.Map[String, AnyRef] =
-      scala.collection.immutable.HashMap(INPUT_DATA_SET_PARAMETER -> classOf[Message])
+      scala.collection.immutable.HashMap(INPUT_DATASET -> classOf[Message])
     datasetBeans
   }
 

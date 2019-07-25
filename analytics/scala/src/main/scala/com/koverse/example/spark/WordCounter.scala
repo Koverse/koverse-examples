@@ -61,7 +61,10 @@ class WordCounter(
     import spark.implicits._
 
     // for each Record, tokenize the specified text field and count each occurrence
-    val wordCountDataset = inputRecordsDataset.flatMap(record => record.text.toLowerCase.split(tokenizationString))
+    inputRecordsDataset.show()
+    // Take the column that contains the text and tokenize and count the words
+//    val wordDF = inputDataFrame.explode(textFieldName, "word") { text: String => text.split(tokenizationString) }
+    val wordCountDataset = inputRecordsDataset.flatMap(record => record.getArticle.toLowerCase.split(tokenizationString))
       .map { token => token.toLowerCase().trim() }
       .groupByKey(value => value)
       .mapGroups((key,values) =>(key,values.length))
@@ -71,7 +74,6 @@ class WordCounter(
     val outputDataset = wordCountDataset.as[WordCount]
 
     outputDataset
-
   }
 }
 
