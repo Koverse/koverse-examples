@@ -16,8 +16,6 @@
 
 package com.koverse.example.spark
 
-import java.io.Serializable
-
 import com.koverse.sdk.Version
 import com.koverse.sdk.data.Parameter
 import com.koverse.sdk.transform.scala.{DatasetTransform, DatasetTransformContext}
