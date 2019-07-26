@@ -23,7 +23,7 @@ import com.koverse.sdk.data.Parameter
 import com.koverse.sdk.transform.scala.{DatasetTransform, DatasetTransformContext}
 import org.apache.spark.sql.Dataset
 
-case class Message(var article: String, var title: String, var id: Long) extends Serializable {
+case class Message(var article: String, var title: String, var id: Long) {
 
   def this() = this("", "", 0)
 // article must be text and set by textFieldParam value
