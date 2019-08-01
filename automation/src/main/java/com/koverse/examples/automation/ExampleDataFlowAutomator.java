@@ -35,7 +35,6 @@ import com.koverse.thrift.dataflow.TTransform;
 import com.koverse.thrift.dataflow.TTransformInputDataWindowType;
 import com.koverse.thrift.dataflow.TTransformScheduleType;
 
-import java.util.ArrayList;
 import org.apache.thrift.TException;
 
 import java.io.FileInputStream;
@@ -50,6 +49,8 @@ import java.util.Properties;
 import java.util.Set;
 
 public class ExampleDataFlowAutomator {
+
+  static Client client;
 
   private static Client connect() throws IOException, TException {
 
@@ -67,8 +68,7 @@ public class ExampleDataFlowAutomator {
       throw new IllegalArgumentException("You must update the client.properties file before running this example.");
     }
 
-    ClientConfiguration config =
-        ClientConfiguration.builder().host(host).clientName(name).clientSecret(secret).build();
+    ClientConfiguration config = ClientConfiguration.builder().host(host).clientName(name).clientSecret(secret).build();
 
     return new Client(config);
   }
@@ -178,6 +178,8 @@ public class ExampleDataFlowAutomator {
       throws TException, InterruptedException {
 
     String dataSetId  = dataSet.getId();
+
+    System.out.println(String.format("Waiting for jobs to start for data set %s ..", dataSet.getName()));
     Set<Long> jobIds = new HashSet<>();
     List<TJobAbstract> activeJobs = client.getAllActiveJobs(dataSetId);
 
@@ -192,36 +194,57 @@ public class ExampleDataFlowAutomator {
 
     // while there are jobs running we want to keep updating our map of statuses
     while (!activeJobs.isEmpty()) {
-      Thread.sleep(5000);
-      activeJobs = client.getAllActiveJobs(dataSetId);
-      for (TJobAbstract job : activeJobs) {
-        jobIds.add(job.getId());
-        // System.out.println(String.format("%d %s:%s", job.getId(), job.getType(), job.getStatus()));
-      }
-      for (Long jobId : jobIds) {
-        TJobAbstract job = client.getJob(jobId);
-        if (job.getStatus().equals("error")) {
-          System.out.println(String.format("Job completed with status error: %n%n %s", job.getErrorDetail()));
+      System.out.println(String.format("got %d jobs running", activeJobs.size()));
+      System.out.println("waiting for jobs to complete");
+
+      // now we'll wait until the import job, background processing jobs, and transform job are completed
+      while (!activeJobs.isEmpty()) {
+        Thread.sleep(5000);
+        activeJobs = client.getAllActiveJobs(dataSetId);
+        for (TJobAbstract job : activeJobs) {
+          jobIds.add(job.getId());
+          System.out.println(String.format("%d %s:%s", job.getId(), job.getType(), job.getStatus()));
+        }
+        for (Long jobId : jobIds) {
+          TJobAbstract job = client.getJob(jobId);
+          if (job.getStatus().equals("error")) {
+            System.out.println(String.format("Job completed with status error: %n%n %s", job.getErrorDetail()));
+          }
         }
       }
+
+      System.out.println("Jobs completed.");
+
+      jobIds.forEach((id) -> {
+        String finalStatus;
+        String jobType;
+        try {
+          TJobAbstract tJobAbstract = client.getJob(id);
+          finalStatus = tJobAbstract.getStatus();
+          jobType = tJobAbstract.getType().name();
+          System.out.println("Job " + id + ", " + finalStatus);
+        } catch (TException ex) {
+          finalStatus = "exception";
+          jobType = "ERROR";
+          System.out.println(String.format("Job %ds", id));
+        }
+        System.out.println("jobs completed");
+
+        // check for any jobs that errored out
+        for (Long jobId : jobIds) {
+          try {
+            TJobAbstract job = client.getJob(jobId);
+            if (job.getStatus().equals("error")) {
+              System.out.println(
+                  String.format("Job completed with status error: %n%n %s", job.getErrorDetail()));
+            }
+            jobStatus.put(jobType, finalStatus);
+          } catch (TException e) {
+            System.out.println(e.getMessage());
+          }
+        }
+      });
     }
-
-    System.out.println("Jobs completed.");
-
-    jobIds.forEach((id) -> {
-      String finalStatus;
-      String jobType;
-      try {
-        TJobAbstract tJobAbstract = client.getJob(id);
-        finalStatus = tJobAbstract.getStatus();
-        jobType = tJobAbstract.getType().name();
-        // System.out.println("Job " + id + ", " + finalStatus);
-      } catch (TException ex) {
-        finalStatus = "exception";
-        jobType = "ERROR";
-      }
-      jobStatus.put(jobType, finalStatus);
-    });
   }
 
   public static void tearDownDataFlow(Client client, String dataFlowName) throws TException {
@@ -282,17 +305,17 @@ public class ExampleDataFlowAutomator {
     return wikipediaSource;
   }
 
-  public static void main(String[] args) throws TException, IOException, InterruptedException {
+  public static void main(String[] args) throws IOException, TException, InterruptedException {
 
     String dataFlowName = "Example Data Flow";
     String pages = "Thor Odin Freyja";
-    Client client = connect();
 
+    client = connect();
     tearDownDataFlow(client, dataFlowName);
     setupDataFlow(client, dataFlowName, pages);
-
     executeAndMonitorDataFlow(client, dataFlowName);
     previewOutput(client, dataFlowName);
+
   }
 
 }
