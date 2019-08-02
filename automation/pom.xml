@@ -6,7 +6,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <koverse.version>3.0.2</koverse.version>
+        <koverse.version>3.0.3</koverse.version>
     </properties>
 
     <groupId>com.koverse.examples</groupId>
