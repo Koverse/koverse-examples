@@ -6,7 +6,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <koverse.version>3.0.1</koverse.version>
+        <koverse.version>3.0.3</koverse.version>
         <scala.version>2.11.4</scala.version>
         <scala.tools.version>2.11</scala.tools.version>
         <spark.version>2.3.2</spark.version>
@@ -14,7 +14,7 @@
 
     <groupId>com.koverse.examples</groupId>
     <artifactId>koverse-analytics-examples</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.3</version>
 
     <build>
         <pluginManagement>
