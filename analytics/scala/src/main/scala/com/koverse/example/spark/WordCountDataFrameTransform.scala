@@ -21,6 +21,9 @@ import com.koverse.sdk.data.Parameter
 import com.koverse.sdk.transform.scala.{DataFrameTransform, DataFrameTransformContext}
 import org.apache.spark.sql.DataFrame
 
+case class Message(article: String, title: String, id: Long)
+case class WordCount(text: String, count: Int)
+
 class WordCountDataFrameTransform extends DataFrameTransform {
 
   private val TEXT_FIELD_NAME_PARAMETER = "textFieldName"

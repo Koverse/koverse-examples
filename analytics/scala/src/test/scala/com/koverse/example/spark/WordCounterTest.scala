@@ -74,25 +74,6 @@ class WordCounterTest extends FunSuite {
 
   }
 
-  test("Dataset test") {
-    import sparkSession.implicits._
-
-    val messages = Seq(
-      Message("these words are to be counted", "words", 0),
-      Message("more words that are worth counting", "more words", 1))
-
-    val inputDataset = messages.toDS()//sparkSession.createDataset(messages)//.as[Message](messageEncoder)
-    val wordCounter = new WordCounter("article", """['".?!,:;\s]""")
-    val outputDataset = wordCounter.count(inputDataset, sparkSession)
-
-    assertEquals(outputDataset.count(), 10)
-    val outputRows = outputDataset.collect()
-    val countRecordOption = outputRows.find { r => r.text.equals("are") }
-    assertTrue(countRecordOption.isDefined)
-    assertEquals(countRecordOption.get.count, 2)
-
-  }
-
   test("Dataset test no matching fields") {
     import sparkSession.implicits._
 

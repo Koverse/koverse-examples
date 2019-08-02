@@ -12,7 +12,6 @@ import java.util.UUID
 @RunWith(classOf[JUnitRunner])
 class ScalaAnalyticsExamplesFT extends FunSuite with TestUtils {
 
-
   test("Word Counter DataFrame test") { // automation set up - see automation example for details
     val pages = "baseball soccer"
     var importDataSet = createDataSet(UUID.randomUUID.toString)
@@ -56,14 +55,14 @@ class ScalaAnalyticsExamplesFT extends FunSuite with TestUtils {
     tearDownDataFlow(importDataSet.getName());
   }
 
-  test("Word Counter DataSet test") { // automation set up - see automation example for details
+  test("Word Counter RDD test") { // automation set up - see automation example for details
     val pages = "baseball soccer"
     var importDataSet = createDataSet(UUID.randomUUID.toString)
-    val tranformDataSet = createDataSet(importDataSet.getName + "-dataset-wordcount")
+    val tranformDataSet = createDataSet(importDataSet.getName + "-rdd-wordcount")
     importDataSet = setUpImport(importDataSet, pages)
 
     // add in tranform
-    val transformType = "wordCountDatasetExample"
+    val transformType = "wordCountRddExample"
     val transformOptions = new util.HashMap[String, TConfigValue]
     val textFieldValue = new TConfigValue
     textFieldValue.setType(TConfigValueType.STRING)
@@ -74,7 +73,7 @@ class ScalaAnalyticsExamplesFT extends FunSuite with TestUtils {
     val inputCollectionValue = new TConfigValue
     inputCollectionValue.setType(TConfigValueType.STRING_LIST)
     inputCollectionValue.setStringList(newArrayList(importDataSet.getId))
-    transformOptions.put("messageDataset", inputCollectionValue)
+    transformOptions.put("inputDataset", inputCollectionValue)
 
     // configure the transform to write results to the word count data set
     val outputCollectionValue = new TConfigValue
@@ -90,13 +89,13 @@ class ScalaAnalyticsExamplesFT extends FunSuite with TestUtils {
     val results = client.getAllRecords(tranformDataSet.getName, 10)
 
     import scala.collection.JavaConversions._
-    println("First 10 word counts for " + pages )
+    println("First 10 word counts for " + pages)
     for (result <- results) {
-      println(s"${result.get("lowerWord")} ${result.get("count")}")
+      println(s"${result.get("word")} ${result.get("count")}")
     }
     /* comment this out if you want to see the data sets in the UI */
     // tidy up afterward
-//    tearDownDataFlow(importDataSet.getName());
+    tearDownDataFlow(importDataSet.getName());
   }
 
 }
