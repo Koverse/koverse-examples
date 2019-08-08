@@ -16,48 +16,61 @@
 
 package com.koverse.examples.analytics;
 
+import static org.apache.spark.sql.functions.callUDF;
+import static org.apache.spark.sql.functions.col;
+
 import com.koverse.sdk.Version;
 import com.koverse.sdk.data.Parameter;
 import com.koverse.sdk.data.SimpleRecord;
-import com.koverse.sdk.transform.java.RDDTransform;
-import com.koverse.sdk.transform.java.RDDTransformContext;
-import org.apache.spark.api.java.JavaRDD;
+import com.koverse.sdk.transform.java.DataFrameTransform;
+import com.koverse.sdk.transform.java.DataFrameTransformContext;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
-import scala.Tuple2;
 
+import org.apache.spark.ml.feature.RegexTokenizer;
+import org.apache.spark.ml.feature.Tokenizer;
+import org.apache.spark.sql.Column;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.DataTypes;
 
-public class JavaWordCountTransform implements RDDTransform {
+import scala.collection.mutable.WrappedArray;
+
+public class JavaTokenizerDataFrameTransform implements DataFrameTransform {
 
   private static final String TEXT_FIELD_PARAM = "textFieldParam";
 
   @Override
-  public JavaRDD<SimpleRecord> execute(RDDTransformContext sparkTransformContext) {
+  public Dataset<Row> execute(DataFrameTransformContext sparkTransformContext) {
 
     final String textField = sparkTransformContext.getParameters().get(TEXT_FIELD_PARAM);
+    SparkSession spark = sparkTransformContext.getSparkSession();
 
-    JavaRDD<SimpleRecord> rdd =
-        sparkTransformContext.getJavaRDDs().values().iterator().next();
+    Dataset<Row> dataset =
+        sparkTransformContext.getDataFrames().values().iterator().next();
 
-    JavaRDD<String> words = rdd
-        .filter((Function<SimpleRecord, Boolean>) t1 -> t1.containsKey(textField))
-        .flatMap((FlatMapFunction<SimpleRecord, String>) t ->
-            Arrays.asList(t.get(textField).toString().toLowerCase().split("\\s+")).iterator());
+    RegexTokenizer regexTokenizer = new RegexTokenizer()
+        .setInputCol("article")
+        .setOutputCol("words")
+        .setPattern("\\W")
+        .setToLowercase(true);
 
-    // calculate counts
-    return words.mapToPair((PairFunction<String, String, Integer>) t -> new Tuple2<>(t, 1))
-        .reduceByKey((Function2<Integer, Integer, Integer>) Integer::sum)
-        .map((Function<Tuple2<String, Integer>, SimpleRecord>) t1 -> {
-          SimpleRecord r = new SimpleRecord();
-          r.put("word", t1._1);
-          r.put("count", t1._2);
-          return r;
-        });
+    spark.udf().register(
+        "countTokens", (WrappedArray<?> words) -> words.size(), DataTypes.IntegerType);
+
+    Dataset<Row> regexTokenized = regexTokenizer.transform(dataset);
+
+    return regexTokenized.select("article", "words")
+        .withColumn("tokens", callUDF("countTokens", col("words")));
   }
 
   @Override
@@ -84,12 +97,12 @@ public class JavaWordCountTransform implements RDDTransform {
 
   @Override
   public String getName() {
-    return "Spark Word Count";
+    return "Spark Tokenizer DataFrame Tranform";
   }
 
   @Override
   public String getTypeId() {
-    return "spark-word-count";
+    return "java-tokenizer-dataframe-transform";
   }
 
   @Override
@@ -105,8 +118,7 @@ public class JavaWordCountTransform implements RDDTransform {
 
   @Override
   public String getDescription() {
-    return "Count all words in the text field of the input data sets and write the counts for each word to the output data set. "
-        + "Uses Apache Spark.";
+    return "Basic tokenizer for Dataframe " + "Uses Apache Spark.";
   }
 
 }

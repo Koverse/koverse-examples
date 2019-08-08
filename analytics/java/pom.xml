@@ -111,7 +111,17 @@
             <artifactId>spark-core_${scala.tools.version}</artifactId>
             <version>${spark.version}</version>
         </dependency>
-        <!-- end spark-testing-base dependencies -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_${scala.tools.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-mllib_${scala.tools.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+      <!-- end spark-testing-base dependencies -->
         <!-- test dependencies -->
         <dependency>
             <groupId>junit</groupId>
@@ -141,6 +151,24 @@
         <artifactId>spark-sql_2.10</artifactId>
         <version>2.2.1</version>
         <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-sql_2.10</artifactId>
+        <version>2.2.1</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-sql_2.10</artifactId>
+        <version>2.2.1</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.holdenkarau</groupId>
+        <artifactId>spark-testing-base_2.11</artifactId>
+        <version>2.3.2_0.11.0</version>
+        <scope>test</scope>
       </dependency>
     </dependencies>
 
