@@ -2,10 +2,7 @@ package com.koverse.examples.analytics;
 
 import static com.koverse.com.google.common.collect.Lists.newArrayList;
 
-import com.koverse.sdk.data.DataSetResult;
-import com.koverse.sdk.data.SimpleRecord;
 import com.koverse.thrift.TConfigValue;
-import com.koverse.thrift.TConfigValueType;
 import com.koverse.thrift.TNotFoundException;
 import com.koverse.thrift.client.Client;
 import com.koverse.thrift.client.ClientConfiguration;

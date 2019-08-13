@@ -6,16 +6,17 @@ import com.koverse.sdk.data.SimpleRecord;
 import com.koverse.thrift.TConfigValue;
 import com.koverse.thrift.TConfigValueType;
 import com.koverse.thrift.collection.TCollection;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+
 import org.apache.thrift.TException;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class JavaAnalyticsExamplesFT {
 

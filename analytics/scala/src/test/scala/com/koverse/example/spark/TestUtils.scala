@@ -3,16 +3,15 @@ package com.koverse.example.spark
 import com.koverse.thrift.client.{Client, ClientConfiguration}
 import com.koverse.thrift.{TConfigValue, TNotFoundException}
 import com.koverse.thrift.collection.TCollection
-import com.koverse.thrift.dataflow.{TImportFlow, TImportFlowType, TJobAbstract, TSource, TTransform, TTransformInputDataWindowType, TTransformScheduleType}
-import java.io.FileInputStream
-import java.util
-import java.util.{HashMap, HashSet, Map, Properties, Set}
+import com.koverse.thrift.dataflow.{TImportFlow, TImportFlowType, TSource, TTransform, TTransformInputDataWindowType, TTransformScheduleType}
 
 import org.apache.thrift.TException
 
+import java.io.FileInputStream
+import java.util
+import java.util.Properties
+
 import scala.collection.JavaConverters._
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 trait TestUtils {
 

@@ -1,9 +1,11 @@
 package com.koverse.examples.automation;
 
 import com.koverse.thrift.security.TAuthorizationException;
-import java.io.IOException;
+
 import org.apache.thrift.TException;
 import org.junit.Test;
+
+import java.io.IOException;
 
 public class ExampleDataFlowAutomatorTest {
 

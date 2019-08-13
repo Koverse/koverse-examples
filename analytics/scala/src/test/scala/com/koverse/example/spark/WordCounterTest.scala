@@ -18,10 +18,10 @@ package com.koverse.example.spark
 
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
-import org.junit.Assert._
 import org.scalatest.junit.JUnitRunner
 import com.koverse.sdk.data.SimpleRecord
 import org.apache.spark.sql.SparkSession
+import org.junit.Assert
 
 import scala.collection.JavaConverters._
 
@@ -48,12 +48,12 @@ class WordCounterTest extends FunSuite {
     val wordCounter = new WordCounter("text", """['".?!,:;\s]+""")
     val outputRecordsRdd = wordCounter.count(inputRecordsRdd)
 
-    assertEquals(outputRecordsRdd.count, 10)
+    Assert.assertEquals(outputRecordsRdd.count, 10)
     val outputRecords = outputRecordsRdd.collect()
     val countRecordOption = outputRecords.find { simpleRecord => simpleRecord.get("word").equals("are") }
 
-    assertTrue(countRecordOption.isDefined)
-    assertEquals(countRecordOption.get.get("count"), 2)
+    Assert.assertTrue(countRecordOption.isDefined)
+    Assert.assertEquals(countRecordOption.get.get("count"), 2)
   }
 
   test("DataFrame test") {
@@ -66,11 +66,11 @@ class WordCounterTest extends FunSuite {
     val wordCounter = new WordCounter("article", """['".?!,:;\s]""")
     val outputDataFrame = wordCounter.count(inputDataFrame)
 
-    assertEquals(outputDataFrame.count(), 10)
+    Assert.assertEquals(outputDataFrame.count(), 10)
     val outputRows = outputDataFrame.collect()
     val countRowOption = outputRows.find { row => row.getAs[String]("lowerWord").equals("are") }
-    assertTrue(countRowOption.isDefined)
-    assertEquals(countRowOption.get.getAs[Long]("count"), 2)
+    Assert.assertTrue(countRowOption.isDefined)
+    Assert.assertEquals(countRowOption.get.getAs[Long]("count"), 2)
 
   }
 
@@ -85,7 +85,7 @@ class WordCounterTest extends FunSuite {
     val wordCounter = new WordCounter("text", """['".?!,:;\s]""")
     val outputDataset = wordCounter.count(inputDataset, sparkSession)
 
-    assertEquals(outputDataset.count(), 0)
+    Assert.assertEquals(outputDataset.count(), 0)
 
   }
 }

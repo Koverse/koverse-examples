@@ -21,29 +21,16 @@ import static org.apache.spark.sql.functions.col;
 
 import com.koverse.sdk.Version;
 import com.koverse.sdk.data.Parameter;
-import com.koverse.sdk.data.SimpleRecord;
 import com.koverse.sdk.transform.java.DataFrameTransform;
 import com.koverse.sdk.transform.java.DataFrameTransformContext;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.apache.spark.SparkContext;
-import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
-
 import org.apache.spark.ml.feature.RegexTokenizer;
-import org.apache.spark.ml.feature.Tokenizer;
-import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
-
 import scala.collection.mutable.WrappedArray;
+
+import java.util.ArrayList;
 
 public class JavaTokenizerDataFrameTransform implements DataFrameTransform {
 
