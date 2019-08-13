@@ -17,9 +17,8 @@ import java.util.Map;
 
 import static com.koverse.com.google.common.collect.Lists.newArrayList;
 
-
 public class SentimentAnalysis implements DataFrameTransform, Serializable {
-
+  private static final long serialVersionUID = 1L;
   /*
    * We’ll begin by defining a set of parameters that our Transform will use to request configuration information from a
    * user of the Koverse UI. In this case we’ll ask the user to tell our Transform which field in their data contains text
@@ -37,14 +36,15 @@ public class SentimentAnalysis implements DataFrameTransform, Serializable {
             .displayName("Text field")
             .parameterName(TEXT_COL_PARAM)
             .required(Boolean.TRUE)
-            .type(Parameter.TYPE_COLLECTION_FIELD)
+            .type(Parameter.TYPE_STRING)
             .required(true)
             .build(),
         Parameter.newBuilder()
             .displayName("Date field")
             .parameterName(DATE_COL_PARAM)
             .required(Boolean.TRUE)
-            .type(Parameter.TYPE_COLLECTION_FIELD)
+            // we want to know the name of the date field, not a date to search for
+            .type(Parameter.TYPE_STRING)
             .build(),
         Parameter.newBuilder()
             .required(true)
