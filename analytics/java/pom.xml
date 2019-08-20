@@ -14,7 +14,7 @@
 
     <groupId>com.koverse.examples</groupId>
     <artifactId>koverse-analytics-examples</artifactId>
-    <version>3.0.3</version>
+    <version>3.1.0</version>
 
     <build>
         <pluginManagement>

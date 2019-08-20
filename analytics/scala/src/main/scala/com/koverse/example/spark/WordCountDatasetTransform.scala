@@ -16,34 +16,81 @@
 
 package com.koverse.example.spark
 
+import java.io.Serializable
+
 import com.koverse.sdk.Version
 import com.koverse.sdk.data.Parameter
-import com.koverse.sdk.transform.scala.{DataFrameTransform, DataFrameTransformContext}
-import org.apache.spark.sql.DataFrame
+import com.koverse.sdk.transform.scala.{DatasetTransform, DatasetTransformContext}
+import org.apache.spark.sql.Dataset
 
-class WordCountDataFrameTransform extends DataFrameTransform {
+case class Message(var article: String, var title: String, var id: Long) extends Serializable {
+
+  def this() = this("", "", 0)
+  // article must be text and set by textFieldParam value
+  def getArticle: String = article
+
+  def setArticle(article: String): Unit = {
+    this.article = article
+  }
+
+  def getTitle: String = title
+
+  def setTitle(revision: String): Unit = {
+    this.title = title
+  }
+
+  def getId: Long = id
+
+  def setId(id: Long): Unit = {
+    this.id = id
+  }
+}
+
+case class WordCount(var text: String, var count: Int) {
+
+  def this() = this("", 0)
+
+  def getText: String = text
+
+  def setText(text: String): Unit = {
+    this.text = text
+  }
+
+  def getCount: Int = count
+
+  def setCount(count: Int): Unit = {
+    this.count = count
+  }
+}
+
+class WordCountDatasetTransform extends DatasetTransform {
 
   private val TEXT_FIELD_NAME_PARAMETER = "textFieldName"
-  private val INPUT_DATASET = "inputDataset"
+  private val MESSAGE_DATASET = "messageDataset"
 
   /**
     * Koverse calls this method to execute your transform.
     *
     * @param context The context of this spark execution
-    * @return The resulting RDD of this transform execution.
+    * @return The resulting Dataset of this transform execution.
     *         It will be applied to the output collection.
     */
-  override def execute(context: DataFrameTransformContext): DataFrame = {
+  override def execute(context: DatasetTransformContext): Dataset[WordCount] = {
 
     // for each Record, tokenize the specified text field and count each occurence
-    val textFieldName = context.getParameters.get(TEXT_FIELD_NAME_PARAMETER).get
+    val input = context.getDatasets.get(MESSAGE_DATASET).get.asInstanceOf[Dataset[Message]]
 
-    // grab the data frames
-    val inputDataframe = context.getDataFrames.values.iterator.next;
+    val textFieldName = context.getParameters.get(TEXT_FIELD_NAME_PARAMETER)
 
     // Create the WordCounter which will perform the logic of our Transform
-    val wordCounter = new WordCounter(textFieldName, """['".?!,:;\s]+""")
-    wordCounter.count(inputDataframe)
+    val tokenizationString =
+      """['".?!,:;\s]+"""
+
+    // Create the WordCounter which will perform the logic of our Transform
+    val wordCounter = new WordCounter(textFieldName.get, """['".?!,:;\s]+""")
+    val wordCountDataset = wordCounter.count(input, context.getSparkSession)
+
+    wordCountDataset
 
   }
 
@@ -57,8 +104,14 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The name of this transform.
     */
-  override def getName: String = "Word Count DataFrame Example"
+  override def getName: String = "Word Count Dataset Example"
 
+  /**
+    * Get the parameters of this transform.  The returned iterable can
+    * be immutable, as it will not be altered.
+    *
+    * @return The parameters of this transform.
+    */
   /**
     * Get the parameters of this transform.  The returned iterable can
     * be immutable, as it will not be altered.
@@ -80,8 +133,8 @@ class WordCountDataFrameTransform extends DataFrameTransform {
       .build
 
     val inputDatasetParameter = Parameter.newBuilder
-      .parameterName(INPUT_DATASET)
-      .displayName("Dataset containing input records")
+      .parameterName(MESSAGE_DATASET)
+      .displayName("Dataset containing message records")
       .`type`(Parameter.TYPE_INPUT_COLLECTION)
       .required(true)
       .build
@@ -95,7 +148,7 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The programmatic id of this transform.
     */
-  override def getTypeId: String = "wordCountDataFrameExample"
+  override def getTypeId: String = "wordCountDatasetExample"
 
   /**
     * Get the version of this transform.
@@ -109,7 +162,14 @@ class WordCountDataFrameTransform extends DataFrameTransform {
     *
     * @return The the description of this transform.
     */
-  override def getDescription: String = "This is the Word Count DataFrame Example"
+  override def getDescription: String = "This is the Word Count Dataset Example"
 
-  override def supportsIncrementalProcessing: Boolean = false
+  override def supportsIncrementalProcessing(): Boolean = true
+
+  override def getDatasetBeans: scala.collection.immutable.Map[String, AnyRef] = {
+    val datasetBeans: scala.collection.immutable.Map[String, AnyRef] =
+      scala.collection.immutable.HashMap(MESSAGE_DATASET -> classOf[Message])
+    datasetBeans
+  }
+
 }

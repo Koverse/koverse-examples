@@ -21,7 +21,7 @@ limitations under the License.
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.koverse</groupId>
   <artifactId>koverse-examples-analytics-scala</artifactId>
-  <version>3.0.3</version>
+  <version>3.1.0</version>
   <name>${project.artifactId}</name>
 
   <properties>
