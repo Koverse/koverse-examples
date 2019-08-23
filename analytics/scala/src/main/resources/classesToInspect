@@ -4,3 +4,9 @@ com.koverse.example.spark.NaiveBayesPredictTransform
 com.koverse.example.spark.WordCountRDDTransform
 com.koverse.example.spark.WordCountDataFrameTransform
 com.koverse.example.spark.WordCountDatasetTransform
+com.koverse.example.spark.StoreCaseClassMapDataFrameTransform
+com.koverse.example.spark.LogisticsRegressionTrain
+com.koverse.example.spark.LogisticRegressionDataPrep
+com.koverse.example.spark.AnalyzeSentiment
+com.koverse.example.spark.WordCountSparkDataFrameExample
+com.koverse.example.spark.SparkWordCount
