@@ -4,6 +4,7 @@ import com.koverse.sdk.Version;
 import com.koverse.sdk.data.Parameter;
 import com.koverse.sdk.transform.java.DataFrameTransform;
 import com.koverse.sdk.transform.java.DataFrameTransformContext;
+
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -11,13 +12,13 @@ import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.types.DataTypes;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import static com.koverse.com.google.common.collect.Lists.newArrayList;
 
-
-public class SentimentAnalysis implements DataFrameTransform {
-
+public class SentimentAnalysis implements DataFrameTransform, Serializable {
+  private static final long serialVersionUID = 1L;
   /*
    * We’ll begin by defining a set of parameters that our Transform will use to request configuration information from a
    * user of the Koverse UI. In this case we’ll ask the user to tell our Transform which field in their data contains text
@@ -35,13 +36,15 @@ public class SentimentAnalysis implements DataFrameTransform {
             .displayName("Text field")
             .parameterName(TEXT_COL_PARAM)
             .required(Boolean.TRUE)
-            .type(Parameter.TYPE_COLLECTION_FIELD)
+            .type(Parameter.TYPE_STRING)
+            .required(true)
             .build(),
         Parameter.newBuilder()
             .displayName("Date field")
             .parameterName(DATE_COL_PARAM)
             .required(Boolean.TRUE)
-            .type(Parameter.TYPE_COLLECTION_FIELD)
+            // we want to know the name of the date field, not a date to search for
+            .type(Parameter.TYPE_STRING)
             .build(),
         Parameter.newBuilder()
             .required(true)
@@ -63,7 +66,6 @@ public class SentimentAnalysis implements DataFrameTransform {
     String textCol = context.getParameters().get(TEXT_COL_PARAM);
     String dateCol = context.getParameters().get(DATE_COL_PARAM);
 
-
     /*
      * We’ll generate a sentiment score by using a word list published in the AFINN data set. This data set represented in the
      * AfinnData class as a static Java Map that we’ll use to lookup the sentiment score of each word and generate an average
@@ -82,7 +84,7 @@ public class SentimentAnalysis implements DataFrameTransform {
      * words that appear in that message:
      */
 
-    UDF1 sentimentUDF = new UDF1<String, Double>() {
+    UDF1<String,Double> sentimentUDF = new UDF1<String, Double>() {
 
       @Override
       public Double call(String text) throws Exception {
@@ -107,7 +109,7 @@ public class SentimentAnalysis implements DataFrameTransform {
      * We have to register our UDF in order to use it to create a new column for our data frame:
      */
 
-    context.getSQLContext().udf().register("sentimentUDF", sentimentUDF, DataTypes.DoubleType);
+    context.getSparkSession().udf().register("sentimentUDF", sentimentUDF, DataTypes.DoubleType);
 
     /*
      * Now we’ll grab the data frame created by Koverse from a data set the user has specified. Then we’ll select only the
@@ -119,13 +121,11 @@ public class SentimentAnalysis implements DataFrameTransform {
      * the resulting Data Set is the only user allowed to see the data within it until he or she decides to grant access to users
      * in other groups.
      */
-
     Dataset<Row> rowDataset = context.getDataFrames().values().iterator().next();
-
-   return rowDataset
-       .select(rowDataset.col(textCol).alias("text"), rowDataset.col(dateCol))
+    return rowDataset
+       .select(rowDataset.col(textCol), rowDataset.col(dateCol))
         .na().drop()
-        .withColumn("score", functions.callUDF("sentimentUDF", rowDataset.col("text")));
+        .withColumn("score", functions.callUDF("sentimentUDF", rowDataset.col(textCol)));
   }
 
   /*

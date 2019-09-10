@@ -16,6 +16,8 @@
 
 package com.koverse.example.spark
 
+import java.beans.Introspector
+
 import com.koverse.sdk.data.SimpleRecord
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
@@ -61,7 +63,16 @@ class WordCounter(
     import spark.implicits._
 
     // for each Record, tokenize the specified text field and count each occurrence
-    val wordCountDataset = inputRecordsDataset.flatMap(record => record.text.toLowerCase.split(tokenizationString))
+    val wordCountDataset = inputRecordsDataset.flatMap(record => {
+      val getter = Introspector.getBeanInfo(record.getClass).getPropertyDescriptors
+        .find(pd => pd.getReadMethod.getName.equals("get" + textFieldName.toLowerCase()
+          .split(' ').map(_.capitalize).mkString(" ")))
+      if (getter.isDefined) {
+        getter.get.getReadMethod.invoke(record).toString.toLowerCase.split(tokenizationString)
+      } else {
+        None
+      }
+    })
       .map { token => token.toLowerCase().trim() }
       .groupByKey(value => value)
       .mapGroups((key,values) =>(key,values.length))
@@ -71,7 +82,6 @@ class WordCounter(
     val outputDataset = wordCountDataset.as[WordCount]
 
     outputDataset
-
   }
 }
 

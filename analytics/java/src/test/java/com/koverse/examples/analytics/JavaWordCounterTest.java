@@ -16,6 +16,9 @@
 
 package com.koverse.examples.analytics;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.koverse.com.google.common.collect.Lists;
 import com.koverse.sdk.data.SimpleRecord;
 import org.apache.spark.SparkConf;
@@ -28,9 +31,6 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Optional;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * These tests leverage the great work at https://github.com/holdenk/spark-testing-base

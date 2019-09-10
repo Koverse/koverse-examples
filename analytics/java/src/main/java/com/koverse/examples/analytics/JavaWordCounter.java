@@ -16,14 +16,13 @@
 
 package com.koverse.examples.analytics;
 
-import com.koverse.com.google.common.collect.Lists;
+import static com.koverse.com.google.common.collect.Lists.newArrayList;
+
 import com.koverse.sdk.data.SimpleRecord;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import scala.Tuple2;
-
-import static com.koverse.com.google.common.collect.Lists.newArrayList;
 
 public class JavaWordCounter implements java.io.Serializable {
 

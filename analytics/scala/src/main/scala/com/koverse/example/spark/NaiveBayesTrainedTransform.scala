@@ -16,8 +16,6 @@
 
 package com.koverse.example.spark
 
-import java._
-
 import com.koverse.com.google.common.collect.Lists
 import com.koverse.sdk.Version
 import com.koverse.sdk.data.{Parameter, SimpleRecord}
@@ -27,7 +25,6 @@ import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.mllib.classification.{NaiveBayes, NaiveBayesModel}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.sql.DataFrame
-
 
 class NaiveBayesTrainedTransform extends JavaSparkTransform {
 
@@ -61,5 +58,5 @@ class NaiveBayesTrainedTransform extends JavaSparkTransform {
 
   override def getDescription: String = "Naive Bayes Training"
 
-  override def getParameters: lang.Iterable[Parameter] = Lists.newArrayList[Parameter]()
+  override def getParameters: java.lang.Iterable[Parameter] = Lists.newArrayList[Parameter]()
 }

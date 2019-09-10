@@ -50,6 +50,8 @@ import java.util.Set;
 
 public class ExampleDataFlowAutomator {
 
+  static Client client;
+
   private static Client connect() throws IOException, TException {
 
     String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
@@ -66,8 +68,7 @@ public class ExampleDataFlowAutomator {
       throw new IllegalArgumentException("You must update the client.properties file before running this example.");
     }
 
-    ClientConfiguration config =
-        ClientConfiguration.builder().host(host).clientName(name).clientSecret(secret).build();
+    ClientConfiguration config = ClientConfiguration.builder().host(host).clientName(name).clientSecret(secret).build();
 
     return new Client(config);
   }
@@ -90,6 +91,8 @@ public class ExampleDataFlowAutomator {
     // Save the updated dataSet
     dataSet = client.updateDataSet(dataSet);
 
+    setUpTransform(client, dataFlowName, dataSet);
+
     // Next we need connect an import flow to pull in data
     System.out.println("setting up import flow");
     TImportFlow importFlow = new TImportFlow();
@@ -104,6 +107,10 @@ public class ExampleDataFlowAutomator {
     dataSet.setImportFlowIds(importFlowIds);
     client.updateDataSet(dataSet);
 
+  }
+
+  private static void setUpTransform (Client client, String dataFlowName, TCollection dataSet)
+      throws TException {
     // setup analytical transform
 
     System.out.println("setting up derivative data set");
@@ -111,7 +118,8 @@ public class ExampleDataFlowAutomator {
 
     System.out.println("setting up transform");
     TTransform transform = new TTransform();
-    transform.setType("extract-keywords-transform");
+
+    transform.setType("spark-word-count");
     transform.setDisabled(false);
     // setting the schedule type to AUTOMATIC means the transform will run
     // whenever there is new data to process
@@ -127,23 +135,13 @@ public class ExampleDataFlowAutomator {
     TConfigValue textFieldValue = new TConfigValue();
     textFieldValue.setType(TConfigValueType.STRING);
     textFieldValue.setStringValue("article");
-    transformOptions.put("textFieldName", textFieldValue);
-
-    TConfigValue titleFieldValue = new TConfigValue();
-    titleFieldValue.setType(TConfigValueType.STRING);
-    titleFieldValue.setStringValue("title");
-    transformOptions.put("titleFieldName", titleFieldValue);
-
-    TConfigValue numKeywordsValue = new TConfigValue();
-    numKeywordsValue.setType(TConfigValueType.LONG);
-    numKeywordsValue.setLongValue(20L);
-    transformOptions.put("numKeywords", numKeywordsValue);
+    transformOptions.put("textFieldParam", textFieldValue);
 
     // configure the transform to read from the Wikipedia articles data set
     TConfigValue inputCollectionValue = new TConfigValue();
     inputCollectionValue.setType(TConfigValueType.STRING_LIST);
     inputCollectionValue.setStringList(newArrayList(dataSet.getId()));
-    transformOptions.put("inputCollection", inputCollectionValue);
+    transformOptions.put("inputDataset", inputCollectionValue);
 
     // configure the transform to write results to the word count data set
     TConfigValue outputCollectionValue = new TConfigValue();
@@ -153,7 +151,6 @@ public class ExampleDataFlowAutomator {
 
     transform.setParameters(transformOptions);
 
-    client.createTransform(transform);
   }
 
 
@@ -161,6 +158,7 @@ public class ExampleDataFlowAutomator {
 
     TCollection dataSet = client.getDataSetByName(dataFlowName);
     List<Long> importFlowIds = dataSet.getImportFlowIds();
+//    importFlowIds.addAll(client.);
 
     // start the import
     importFlowIds.forEach(ifid -> {
@@ -174,46 +172,78 @@ public class ExampleDataFlowAutomator {
 
     // wait for import to complete
     waitForDataSetJobsToComplete(client, dataSet);
-
-    TCollection resultsDataSet = client.getDataSetByName(dataFlowName + " Keywords");
-
-    waitForDataSetJobsToComplete(client, resultsDataSet);
   }
 
   private static void waitForDataSetJobsToComplete(Client client, TCollection dataSet)
       throws TException, InterruptedException {
 
+    String dataSetId  = dataSet.getId();
+
     System.out.println(String.format("Waiting for jobs to start for data set %s ..", dataSet.getName()));
     Set<Long> jobIds = new HashSet<>();
-    List<TJobAbstract> jobs = client.getAllActiveJobs(dataSet.getId());
+    List<TJobAbstract> activeJobs = client.getAllActiveJobs(dataSetId);
 
+    Map<String, String> jobStatus = new HashMap<>();
+
+    System.out.println("Monitoring jobs for " + dataSetId);
     // we'll wait until the import job we requested starts
-    while (jobs.isEmpty()) {
+    while (activeJobs.isEmpty()) {
       Thread.sleep(2000);
-      jobs = client.getAllActiveJobs(dataSet.getId());
+      activeJobs = client.getAllActiveJobs(dataSetId);
     }
 
-    System.out.println(String.format("got %d jobs running", jobs.size()));
-    System.out.println("waiting for jobs to complete");
+    // while there are jobs running we want to keep updating our map of statuses
+    while (!activeJobs.isEmpty()) {
+      System.out.println(String.format("got %d jobs running", activeJobs.size()));
+      System.out.println("waiting for jobs to complete");
 
-    // now we'll wait until the import job, background processing jobs, and transform job are completed
-    while (!jobs.isEmpty()) {
-      Thread.sleep(5000);
-      jobs = client.getAllActiveJobs(dataSet.getId());
-      for (TJobAbstract job : jobs) {
-        jobIds.add(job.getId());
-        System.out.println(String.format("Job %d %s: %s", job.getId(), job.getType(), job.getStatus()));
+      // now we'll wait until the import job, background processing jobs, and transform job are completed
+      while (!activeJobs.isEmpty()) {
+        Thread.sleep(5000);
+        activeJobs = client.getAllActiveJobs(dataSetId);
+        for (TJobAbstract job : activeJobs) {
+          jobIds.add(job.getId());
+          System.out.println(String.format("%d %s:%s", job.getId(), job.getType(), job.getStatus()));
+        }
+        for (Long jobId : jobIds) {
+          TJobAbstract job = client.getJob(jobId);
+          if (job.getStatus().equals("error")) {
+            System.out.println(String.format("Job completed with status error: %n%n %s", job.getErrorDetail()));
+          }
+        }
       }
-    }
 
-    System.out.println("jobs completed");
+      System.out.println("Jobs completed.");
 
-    // check for any jobs that errored out
-    for (Long jobId : jobIds) {
-      TJobAbstract job = client.getJob(jobId);
-      if (job.getStatus().equals("error")) {
-        System.out.println(String.format("Job completed with status error: %n%n %s", job.getErrorDetail()));
-      }
+      jobIds.forEach((id) -> {
+        String finalStatus;
+        String jobType;
+        try {
+          TJobAbstract tJobAbstract = client.getJob(id);
+          finalStatus = tJobAbstract.getStatus();
+          jobType = tJobAbstract.getType().name();
+          System.out.println("Job " + id + ", " + finalStatus);
+        } catch (TException ex) {
+          finalStatus = "exception";
+          jobType = "ERROR";
+          System.out.println(String.format("Job %ds", id));
+        }
+        System.out.println("jobs completed");
+
+        // check for any jobs that errored out
+        for (Long jobId : jobIds) {
+          try {
+            TJobAbstract job = client.getJob(jobId);
+            if (job.getStatus().equals("error")) {
+              System.out.println(
+                  String.format("Job completed with status error: %n%n %s", job.getErrorDetail()));
+            }
+            jobStatus.put(jobType, finalStatus);
+          } catch (TException e) {
+            System.out.println(e.getMessage());
+          }
+        }
+      });
     }
   }
 
@@ -275,16 +305,17 @@ public class ExampleDataFlowAutomator {
     return wikipediaSource;
   }
 
-  public static void main(String[] args) throws TException, IOException, InterruptedException {
+  public static void main(String[] args) throws IOException, TException, InterruptedException {
 
     String dataFlowName = "Example Data Flow";
     String pages = "Thor Odin Freyja";
-    Client client = connect();
 
+    client = connect();
     tearDownDataFlow(client, dataFlowName);
     setupDataFlow(client, dataFlowName, pages);
     executeAndMonitorDataFlow(client, dataFlowName);
     previewOutput(client, dataFlowName);
+
   }
 
 }

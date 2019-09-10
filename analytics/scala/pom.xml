@@ -17,15 +17,16 @@ limitations under the License.
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.koverse</groupId>
   <artifactId>koverse-examples-analytics-scala</artifactId>
-  <version>3.0.0-rc1-SNAPSHOT</version>
+  <version>3.0.3</version>
   <name>${project.artifactId}</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <koverse.version>3.0.0-rc1-SNAPSHOT</koverse.version>
+    <koverse.version>3.0.3</koverse.version>
   </properties>
 
   <!-- Project Metadata specific to your organization -->
@@ -151,27 +152,6 @@ limitations under the License.
         </executions>
       </plugin>
 
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.5.3</version>
-        <configuration>
-          <descriptors>
-            <descriptor>assembly.xml</descriptor>
-          </descriptors>
-          <finalName>PySparkExampleAddon</finalName>
-        </configuration>
-
-        <executions>
-          <execution>
-            <id>bundle</id>
-            <phase>package</phase>
-            <goals>
-              <goal>assembly</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
       <!-- This maven-shade-plugin builds the artifact, which is an "uber jar"
       containing the classes from this project, and the contents of all non-provided
       dependencies. The output of this is the Addon JAR which is uploaded to Koverse. -->
@@ -281,6 +261,7 @@ limitations under the License.
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <id>validate</id>
@@ -365,100 +346,110 @@ limitations under the License.
   </build>
 
   <dependencies>
-    <!-- koverse-sdk is provided by koverse at runtime -->
-    <dependency>
-      <groupId>com.koverse</groupId>
-      <artifactId>koverse-sdk</artifactId>
-      <version>${koverse.version}</version>
-      <scope>provided</scope>
-	<exclusions>
-		<exclusion>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-		</exclusion>
-		<exclusion>
-			<groupId>org.scala-lang</groupId>
-			<artifactId>scala-library</artifactId>
-		</exclusion>
-		<exclusion>
-			<groupId>org.json4s</groupId>
-			<artifactId>json4s-core_2.11</artifactId>
-		</exclusion>
-		<exclusion>
-			<artifactId>servlet-api</artifactId>
-			<groupId>javax.servlet</groupId>
-		</exclusion>
-	</exclusions>
-    </dependency>
+      <!-- koverse-sdk is provided by koverse at runtime -->
+      <dependency>
+        <groupId>com.koverse</groupId>
+        <artifactId>koverse-sdk</artifactId>
+        <version>${koverse.version}</version>
+        <scope>provided</scope>
+    <exclusions>
+      <exclusion>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+      </exclusion>
+      <exclusion>
+        <groupId>org.scala-lang</groupId>
+        <artifactId>scala-library</artifactId>
+      </exclusion>
+      <exclusion>
+        <groupId>org.json4s</groupId>
+        <artifactId>json4s-core_2.11</artifactId>
+      </exclusion>
+      <exclusion>
+        <artifactId>servlet-api</artifactId>
+        <groupId>javax.servlet</groupId>
+      </exclusion>
+    </exclusions>
+      </dependency>
 
-    <dependency>
-      <groupId>org.json4s</groupId>
-      <artifactId>json4s-core_2.11</artifactId>
-      <version>3.3.0.RC4</version>
-      <scope>provided</scope>
-    </dependency>
+      <dependency>
+        <groupId>org.json4s</groupId>
+        <artifactId>json4s-core_2.11</artifactId>
+        <version>3.3.0.RC4</version>
+        <scope>provided</scope>
+      </dependency>
 
-    <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-library</artifactId>
-      <version>2.11.4</version>
-      <scope>provided</scope>
-    </dependency>
-        
-    <dependency>
-      <groupId>com.twitter</groupId>
-      <artifactId>chill_2.11</artifactId>
-      <version>0.9.3</version>
-      <scope>provided</scope>
-    </dependency>
+      <dependency>
+        <groupId>org.scala-lang</groupId>
+        <artifactId>scala-library</artifactId>
+        <version>2.11.4</version>
+        <scope>provided</scope>
+      </dependency>
 
-    <dependency>
-      <groupId>com.twitter</groupId>
-      <artifactId>chill-bijection_2.11</artifactId>
-      <version>0.9.3</version>
-      <scope>provided</scope>
-    </dependency>
-        
-    <dependency>
-      <groupId>com.koverse</groupId>
-      <artifactId>koverse-shaded-deps</artifactId>
-      <version>${koverse.version}</version>
-      <scope>provided</scope>
+      <dependency>
+        <groupId>com.twitter</groupId>
+        <artifactId>chill_2.11</artifactId>
+        <version>0.9.3</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>com.twitter</groupId>
+        <artifactId>chill-bijection_2.11</artifactId>
+        <version>0.9.3</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>com.koverse</groupId>
+        <artifactId>koverse-shaded-deps</artifactId>
+        <version>${koverse.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-mllib_2.11</artifactId>
+        <version>2.3.2</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-common</artifactId>
+        <version>3.1.1</version>
+        <scope>provided</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <!-- spark-testing-base dependencies -->
+      <dependency>
+        <groupId>com.holdenkarau</groupId>
+        <artifactId>spark-testing-base_2.11</artifactId>
+        <version>2.3.2_0.11.0</version>
+        <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-mllib_2.11</artifactId>
+      <artifactId>spark-hive_2.11</artifactId>
       <version>2.3.2</version>
-      <scope>provided</scope>
+      <scope>test</scope>
     </dependency>
+    <!-- end spark-testing-base dependencies -->
+
+    <!-- used here only for automation of transform testing, see ScalaTransformsFT -->
     <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <version>3.1.1</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>com.koverse</groupId>
+      <artifactId>koverse-thrift-client</artifactId>
+      <version>${koverse.version}</version>
+      <scope>test</scope>
     </dependency>
-
-    <!-- spark-testing-base dependencies -->
-   	<dependency>
-	    <groupId>com.holdenkarau</groupId>
-	    <artifactId>spark-testing-base_2.11</artifactId>
-	    <version>2.3.2_0.11.0</version>
-	    <scope>test</scope>
-	</dependency>
-
-	<dependency>
-		<groupId>org.apache.spark</groupId>
-		<artifactId>spark-hive_2.11</artifactId>
-		<version>2.3.2</version>
-		<scope>test</scope>
-	</dependency>
-	<!-- end spark-testing-base dependencies -->
 	
   </dependencies>
 

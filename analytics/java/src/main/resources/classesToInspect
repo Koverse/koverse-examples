@@ -1,2 +1,3 @@
-com.koverse.examples.analytics.JavaWordCountTransform
+com.koverse.examples.analytics.JavaTokenizerDataFrameTransform
+com.koverse.examples.analytics.JavaWordCountRDDTransform
 com.koverse.examples.analytics.SentimentAnalysis

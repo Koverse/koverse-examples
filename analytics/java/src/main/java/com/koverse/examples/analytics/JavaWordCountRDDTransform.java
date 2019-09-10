@@ -28,11 +28,10 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class JavaWordCountTransform implements RDDTransform {
+public class JavaWordCountRDDTransform implements RDDTransform {
 
   private static final String TEXT_FIELD_PARAM = "textFieldParam";
 
@@ -84,12 +83,12 @@ public class JavaWordCountTransform implements RDDTransform {
 
   @Override
   public String getName() {
-    return "Spark Word Count";
+    return "Spark Word Count RDD Tranform";
   }
 
   @Override
   public String getTypeId() {
-    return "spark-word-count";
+    return "java-word-count-rdd-transform";
   }
 
   @Override

@@ -39,7 +39,7 @@ class NaiveBayesPredictTransform extends JavaSparkTransform {
     val inputDataFrame:DataFrame = KoverseSparkSql.createDataFrame(context.getInputCollectionRdds.get(inputCollectionId),
       SQLContext , context.getInputCollectionSchemas.get(inputCollectionId))
 
-    val modelId = context.getInputCollectionIds.get(1)
+    val modelId = context.getInputCollectionIds.get(0)
     val modelRDD:JavaRDD[SimpleRecord] = context.getInputCollectionRdds.get(modelId)
 
     // Test Data (40%)
