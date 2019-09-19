@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.koverse</groupId>
+    <artifactId>koverse-authenticator-examples</artifactId>
+    <version>2.10.9</version>
+    <packaging>jar</packaging>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.8.0</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>2.3</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <dependencies>
+      <dependency>
+        <groupId>com.koverse</groupId>
+        <artifactId>koverse-sdk</artifactId>
+        <version>${project.version}</version>
+        <scope>provided</scope>
+      </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-ext-jdk16</artifactId>
+            <version>1.46</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <repositories>
+        <repository>
+            <id>koverse</id>
+            <name>Koverse Public Repo</name>
+            <url>http://nexus.koverse.com/nexus/content/groups/public/</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>koverse</id>
+            <url>http://nexus.koverse.com/nexus/content/groups/public/</url>
+        </pluginRepository>
+    </pluginRepositories>
+</project>
