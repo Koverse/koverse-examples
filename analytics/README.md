@@ -4,15 +4,14 @@ Analytics examples are divided up by language: Scala, Java, and Python.
 
 JVM based examples
 
-The Java and Scala examples include code to run the examples in Koverse. This code is located in the test directory but doesn't run at build time. To run, build the project using maven 'mvn package', then upload to Koverse using the UI. After that you can run the functional examples.
+To run these examples, build the project using maven 'mvn package', then upload to Koverse using the UI. After that you can run the functional examples.
 
 Steps
 - Run Koverse 3.0.3 or later
-- Go to Koverse UI and create an API token and API client (see Koverse documentation for details)
-- Copy client secret
-- Update client.properties in src/test/resources with client name and client secret
-- 'cd analytics/scala/'
+- Go to Koverse UI and login (see Koverse documentation for details on running the docker developer image at https://koverse.readthedocs.io/en/3.0/dev/dev_image.html )
+- 'cd analytics/scala/' or 'cd analytics/java'
 - 'mvn package'
-- 'mvn -Dtest=TESTSUITE test'. Example testsuite is ScalaAnalyticsExamplesFT
-- You should see output as the transforms are created, run, and sample records are output at the end.
 
+You can now upload the transform as an Addon in the UI under Admin. See https://koverse.readthedocs.io/en/3.0/dev/addons.html#uploading-an-addon-to-koverse for instructions on Uploading an Addon.
+
+Now you can configure and run the transform from the UI. Import data (https://koverse.readthedocs.io/en/3.0/usage/import.html). Then configure the transform (https://koverse.readthedocs.io/en/3.0/usage/transforms.html)

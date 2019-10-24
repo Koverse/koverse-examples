@@ -135,12 +135,6 @@
             <version>${koverse.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.koverse</groupId>
-            <artifactId>koverse-thrift</artifactId>
-            <version>3.0.2-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_2.10</artifactId>
             <version>2.2.1</version>
