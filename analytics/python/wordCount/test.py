@@ -12,14 +12,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from unittest import TestCase
-
 from koverse.transformTest import PySparkTransformTestRunner
 
 from transform import PySparkTransform
 
+import unittest
 
-class TestWordCountTransform(TestCase):
+
+class TestWordCountTransform(unittest.TestCase):
 
     def test_count_words(self):
         text = [
@@ -43,3 +43,6 @@ class TestWordCountTransform(TestCase):
         self.assertEqual(ones['count'], 1)
         self.assertEqual(twos['count'], 2)
         self.assertEqual(threes['count'], 3)
+
+if __name__ == '__main__':
+    unittest.main()
