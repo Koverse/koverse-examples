@@ -16,11 +16,13 @@ id: 'python-word-count-example'
 name: 'Python Word Count Example'
 description: 'This is the Python Word Count Example Transform'
 parameters:
-  -
-      #Required:
-      displayName: Text Field # The name shown in the UI (string)
-      parameterName: text_field # a unique identifier to be used in your transform to retrieve the value of this parameter (string)
-      type: collectionField # One of: string, text, url, boolean, date, integer, enum, collectionField, or collectionMultipleField (string)
+  -   displayName: 'Input datasets'
+      parameterName: 'inputDatasets'
+      type: 'inputCollection'
+      required: true # whether this parameter must be specified (boolean)
+  -   displayName: 'Text Field' # The name shown in the UI (string)
+      parameterName: 'text_field' # a unique identifier to be used in your transform to retrieve the value of this parameter (string)
+      type: 'string' # One of: string, text, url, boolean, date, integer, enum, collectionField, or collectionMultipleField (string)
 
       #Optional:
       # defaultValue: # a default value to assign to this parameter (string)
