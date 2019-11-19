@@ -2,9 +2,12 @@ id: subject-sentiment
 name: 'Extract Subject Sentiment'
 description: 'Extract the average sentiment associated with subjects mentioned in text'
 parameters:
-    -
-        displayName: 'Text field'
-        parameterName: textField
-        type: collectionField
+  -   displayName: 'Input datasets'
+      parameterName: 'inputDatasets'
+      type: 'inputCollection'
+      required: true # whether this parameter must be specified (boolean)
+  -   displayName: 'Text field'
+      parameterName: 'textField'
+      type: 'string'
 version: '0.1.0'
 supportsIncrementalProcessing: true

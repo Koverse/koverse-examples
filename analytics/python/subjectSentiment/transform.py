@@ -24,7 +24,7 @@ class PySparkTransform(object):
 		
 		textField = self.textField
 			 
-		rdd = context.inputRdds.items()[0][1]
+		rdd = list(context.inputRdds.items())[0][1]
 		
 		# get only the records that have some text
 		textRecords = rdd.filter(lambda r: textField in r and len(r[textField]) > 0)
