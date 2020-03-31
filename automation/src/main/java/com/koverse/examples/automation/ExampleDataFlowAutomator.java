@@ -23,18 +23,30 @@ import com.koverse.sdk.data.SimpleRecord;
 import com.koverse.thrift.TConfigValue;
 import com.koverse.thrift.TConfigValueType;
 import com.koverse.thrift.TNotFoundException;
+import com.koverse.thrift.TSchedule;
+import com.koverse.thrift.TScheduleEndingType;
+import com.koverse.thrift.TScheduleRepeatUnit;
 import com.koverse.thrift.client.Client;
 import com.koverse.thrift.client.ClientConfiguration;
 import com.koverse.thrift.collection.TCollection;
 import com.koverse.thrift.collection.TIndexingPolicy;
+import com.koverse.thrift.dataflow.TExportJob;
+import com.koverse.thrift.dataflow.TExportSchedule;
 import com.koverse.thrift.dataflow.TImportFlow;
 import com.koverse.thrift.dataflow.TImportFlowType;
 import com.koverse.thrift.dataflow.TJobAbstract;
+import com.koverse.thrift.dataflow.TSink;
+import com.koverse.thrift.dataflow.TSinkTypeDescription;
 import com.koverse.thrift.dataflow.TSource;
 import com.koverse.thrift.dataflow.TTransform;
 import com.koverse.thrift.dataflow.TTransformInputDataWindowType;
 import com.koverse.thrift.dataflow.TTransformScheduleType;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.thrift.TException;
 
 import java.io.FileInputStream;
@@ -47,10 +59,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import org.joda.time.DateTime;
 
 public class ExampleDataFlowAutomator {
 
-  private static Client connect() throws IOException, TException {
+  private static Client connect() throws IOException, TException, NumberFormatException {
 
     String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
     String appConfigPath = rootPath + "client.properties";
@@ -72,7 +85,7 @@ public class ExampleDataFlowAutomator {
     return new Client(config);
   }
 
-  public static void setupDataFlow(Client client, String dataFlowName, String pages) throws TException {
+  public static TCollection setupDataFlow(Client client, String dataFlowName, String pages) throws TException {
 
     // First we need a source for our data
     System.out.println("setting up source");
@@ -154,10 +167,12 @@ public class ExampleDataFlowAutomator {
     transform.setParameters(transformOptions);
 
     client.createTransform(transform);
+
+    return dataSet;
   }
 
 
-  public static void executeAndMonitorDataFlow(Client client, String dataFlowName) throws TException, InterruptedException {
+  public static TCollection executeAndMonitorDataFlow(Client client, String dataFlowName) throws TException, InterruptedException {
 
     TCollection dataSet = client.getDataSetByName(dataFlowName);
     List<Long> importFlowIds = dataSet.getImportFlowIds();
@@ -173,51 +188,136 @@ public class ExampleDataFlowAutomator {
     });
 
     // wait for import to complete
-    waitForDataSetJobsToComplete(client, dataSet);
+    waitForDataSetJobsToComplete(client, dataSet.getId());
 
     TCollection resultsDataSet = client.getDataSetByName(dataFlowName + " Keywords");
 
-    waitForDataSetJobsToComplete(client, resultsDataSet);
+    waitForDataSetJobsToComplete(client, resultsDataSet.getId());
+
+    return resultsDataSet;
   }
 
-  private static void waitForDataSetJobsToComplete(Client client, TCollection dataSet)
+  public static long setupExport(Client client, String dataFlowName) throws TException {
+    // using the HDFS output Sink
+    String typeId = "hdfs-sink";
+
+    // getting the sinkDescription for type hdfs-sink
+    TSinkTypeDescription sinkDesc;
+    try {
+      sinkDesc=client.getSinkDescription(typeId);
+    } catch (Exception ex) {
+      System.out.println("sinkDesc");
+      ex.printStackTrace();
+    }
+
+    TSink sink = new TSink();
+    sink.setName(dataFlowName + "sink");
+
+    sink.setType(typeId);
+    System.out.println("Setting up export " + dataFlowName + " " + typeId);
+    Map<String, String> sinkParams = new HashMap<>();
+    sinkParams.put("hdfs_namenode", "koversevm:8020");
+    sinkParams.put("file_directory", "koverse-examples");
+    sinkParams.put("koverse_exportfileformat_csv_fieldnames", "title article revision timestamp");
+    sinkParams.put("single_output", "true");
+    sinkParams.put("inputCollection", dataFlowName);
+    sinkParams.put("file_prefix", "example");
+    sinkParams.put("file_format_type", "koverse_exportfileformat_json");
+    sink.setParameters(sinkParams);
+    sink.setScheduleType("automatic");
+    sink.setInputDataWindowType("allData");
+
+    long sinkId =  client.createSink(sink).getId();
+
+    TExportSchedule exportSchedule = new TExportSchedule();
+    exportSchedule.setSinkId(sinkId);
+    TSchedule schedule = new TSchedule();
+    schedule.setStartsOnMs(DateTime.now().plusSeconds(20).getMillis());
+    schedule.setRepeatUnit(TScheduleRepeatUnit.Monthly);
+    schedule.setEndingType(TScheduleEndingType.Count);
+    schedule.setEndsAfter(1);
+    schedule.setCron("0 0 1 * *");
+
+    exportSchedule.setSchedule(schedule);
+
+    client.createExportSchedule(exportSchedule);
+
+    System.out.println(client.getSink(sinkId).toString());
+    System.out.println(exportSchedule.toString());
+
+    return sinkId;
+  }
+
+  public static TExportJob startSink(Client client, long sinkId) throws TException {
+    TExportJob exportJob = new TExportJob();
+    try{
+      exportJob = client.executeSink(sinkId);
+      System.out.println("sink started " + exportJob.toString());
+    } catch (Exception ex){
+      System.out.println(ex.getMessage());
+      System.out.println(ex.getCause());
+      ex.printStackTrace();
+    }
+    try {
+      waitForDataSetJobsToComplete(client, exportJob.getSourceCollectionId());
+    } catch (InterruptedException ex) {
+      System.out.println(ex.getMessage());
+    }
+
+   return exportJob;
+  }
+
+  private static void waitForDataSetJobsToComplete(Client client, String dataSetId)
       throws TException, InterruptedException {
 
-    System.out.println(String.format("Waiting for jobs to start for data set %s ..", dataSet.getName()));
     Set<Long> jobIds = new HashSet<>();
-    List<TJobAbstract> jobs = client.getAllActiveJobs(dataSet.getId());
+    List<TJobAbstract> activeJobs = client.getAllActiveJobs(dataSetId);
 
+    Map<String, String> jobStatus = new HashMap<>();
+
+    System.out.println("Monitoring jobs for " + dataSetId);
     // we'll wait until the import job we requested starts
-    while (jobs.isEmpty()) {
+    while (activeJobs.isEmpty()) {
       Thread.sleep(2000);
-      jobs = client.getAllActiveJobs(dataSet.getId());
+      activeJobs = client.getAllActiveJobs(dataSetId);
     }
 
-    System.out.println(String.format("got %d jobs running", jobs.size()));
-    System.out.println("waiting for jobs to complete");
-
-    // now we'll wait until the import job, background processing jobs, and transform job are completed
-    while (!jobs.isEmpty()) {
+    // while there are jobs running we want to keep updating our map of statuses
+    while (!activeJobs.isEmpty()) {
       Thread.sleep(5000);
-      jobs = client.getAllActiveJobs(dataSet.getId());
-      for (TJobAbstract job : jobs) {
+      activeJobs = client.getAllActiveJobs(dataSetId);
+      for (TJobAbstract job : activeJobs) {
         jobIds.add(job.getId());
-        System.out.println(String.format("Job %d %s: %s", job.getId(), job.getType(), job.getStatus()));
+         System.out.println(String.format("%d %s:%s", job.getId(), job.getType(), job.getStatus()));
+      }
+      for (Long jobId : jobIds) {
+        TJobAbstract job = client.getJob(jobId);
+        if (job.getStatus().equals("error")) {
+          System.out.println(String.format("Job completed with status error: %n%n %s", job.getErrorDetail()));
+        }
       }
     }
 
-    System.out.println("jobs completed");
+    System.out.println("Jobs completed.");
 
-    // check for any jobs that errored out
-    for (Long jobId : jobIds) {
-      TJobAbstract job = client.getJob(jobId);
-      if (job.getStatus().equals("error")) {
-        System.out.println(String.format("Job completed with status error: %n%n %s", job.getErrorDetail()));
+    jobIds.forEach((id) -> {
+      String finalStatus;
+      String jobType;
+      try {
+        TJobAbstract tJobAbstract = client.getJob(id);
+        finalStatus = tJobAbstract.getStatus();
+        jobType = tJobAbstract.getType().name();
+         System.out.println("Job " + id + ", " + finalStatus);
+      } catch (TException ex) {
+        finalStatus = "exception";
+        jobType = "ERROR";
       }
-    }
+      jobStatus.put(jobType, finalStatus);
+    });
+
   }
 
-  public static void tearDownDataFlow(Client client, String dataFlowName) throws TException {
+  public static void tearDownDataFlow(Client client, String dataFlowName, boolean removeOutput) throws TException {
 
     try {
       TCollection dataSet = client.getDataSetByName(dataFlowName);
@@ -236,6 +336,19 @@ public class ExampleDataFlowAutomator {
       client.deleteDataSet(keywordDataSet.getId());
     } catch (TNotFoundException tnfe) {
       // nothing to remove
+    }
+
+    if(removeOutput) {
+      try {
+        // remove hdfs file
+        Configuration config = new Configuration();
+        FileSystem hdfs = FileSystem.get(new URI("hdfs://localhost"), config);
+        boolean isRecursive = true;
+        Path path = new Path("/user/koverse/" + "koverse-examples");
+        hdfs.delete(path, isRecursive);
+      } catch (IOException | URISyntaxException ex) {
+        System.out.println("Unable to remove hdfs files " + ex.getMessage());
+      }
     }
 
     System.out.println(String.format("Done tearing down data flow: %s", dataFlowName));
@@ -280,11 +393,24 @@ public class ExampleDataFlowAutomator {
     String dataFlowName = "Example Data Flow";
     String pages = "Thor Odin Freyja";
     Client client = connect();
+    boolean removeOutput = true; // remove the hdfs files created by the export process, set to false to keep the files.
 
-    tearDownDataFlow(client, dataFlowName);
-    setupDataFlow(client, dataFlowName, pages);
-    executeAndMonitorDataFlow(client, dataFlowName);
+    // remove the data sets and files created by the last test
+    tearDownDataFlow(client, dataFlowName, removeOutput);
+
+    // set up the import data flow
+    TCollection orgDataSet = setupDataFlow(client, dataFlowName, pages);
+
+    // set up the keywords tranform data flow
+    TCollection keywordsDataSet = executeAndMonitorDataFlow(client, dataFlowName);
+
+    // show the output from the keywords transform
     previewOutput(client, dataFlowName);
+
+    // set up export to hdfs
+    long sinkId = setupExport(client, orgDataSet.getId());
+    startSink(client, sinkId);
+
   }
 
 }
