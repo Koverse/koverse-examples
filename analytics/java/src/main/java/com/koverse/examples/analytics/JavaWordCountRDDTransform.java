@@ -30,6 +30,7 @@ import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 
 public class JavaWordCountRDDTransform implements RDDTransform {
 
@@ -39,6 +40,7 @@ public class JavaWordCountRDDTransform implements RDDTransform {
   public JavaRDD<SimpleRecord> execute(RDDTransformContext sparkTransformContext) {
 
     final String textField = sparkTransformContext.getParameters().get(TEXT_FIELD_PARAM);
+
 
     JavaRDD<SimpleRecord> rdd =
         sparkTransformContext.getJavaRDDs().values().iterator().next();
@@ -73,9 +75,15 @@ public class JavaWordCountRDDTransform implements RDDTransform {
 
     params.add(Parameter.newBuilder()
         .required(true)
-        .type(Parameter.TYPE_INPUT_COLLECTION)
-        .parameterName("inputDataset")
-        .displayName("Dataset containing input records")
+        .type(Parameter.TYPE_WINDOWED_INPUT_COLLECTION)
+        .parameterName("firstWindowedInputCollection")
+        .displayName("First list of Datasets containing input records")
+        .build());
+    params.add(Parameter.newBuilder()
+        .required(true)
+        .type(Parameter.TYPE_WINDOWED_INPUT_COLLECTION)
+        .parameterName("secondWindowedInputCollection")
+        .displayName("Second list of Datasets containing input records")
         .build());
 
     return params;

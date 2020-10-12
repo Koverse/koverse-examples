@@ -6,7 +6,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <koverse.version>3.0.3</koverse.version>
+        <koverse.version>3.4.0-SNAPSHOT</koverse.version>
         <scala.version>2.11.4</scala.version>
         <scala.tools.version>2.11</scala.tools.version>
         <spark.version>2.3.2</spark.version>
