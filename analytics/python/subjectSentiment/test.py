@@ -11,9 +11,9 @@ class TestSubjectSentimentTransform(unittest.TestCase):
 
     def testExtractSubjectSentiment(self):
         global text
-        inputDatasets = [[{'text': text}]]
+        inputDatasets = {'inputDatasets':[{'text': 'This is a test Sentence'}]}
         runner = PySparkTransformTestRunner({'textField': 'text'}, PySparkTransform)
-        output = runner.testOnLocalData(inputDatasets).collect()
+        output = runner.testOnLocalData(inputDatasets, named=True).collect()
 
         # check we have the output schema we expect
         self.assertTrue('subject' in output[0])
