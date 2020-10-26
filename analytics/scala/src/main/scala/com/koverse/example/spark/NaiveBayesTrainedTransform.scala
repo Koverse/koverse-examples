@@ -16,27 +16,24 @@
 
 package com.koverse.example.spark
 
-import java._
-
 import com.koverse.com.google.common.collect.Lists
 import com.koverse.sdk.Version
 import com.koverse.sdk.data.{Parameter, SimpleRecord}
+import com.koverse.sdk.transform.spark.sql.KoverseSparkSql
 import com.koverse.sdk.transform.spark.{JavaSparkTransform, JavaSparkTransformContext}
+import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.mllib.classification.{NaiveBayes, NaiveBayesModel}
 import org.apache.spark.mllib.regression.LabeledPoint
-import com.koverse.sdk.transform.spark.sql.{KoverseSparkSql}
-import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.sql.DataFrame
-
 
 class NaiveBayesTrainedTransform extends JavaSparkTransform {
 
   override def execute(context: JavaSparkTransformContext): JavaRDD[SimpleRecord] = {
 
-    val inputCollectionId = context.getInputCollectionIds().get(0)
+    val inputCollectionId = context.getInputCollectionIds.get(0)
     val SQLContext = KoverseSparkSql.createSqlContext(context.getJavaSparkContext.sc)
-    val inputDataFrame:DataFrame = KoverseSparkSql.createDataFrame(context.getInputCollectionRdds().get(inputCollectionId),
-      SQLContext , context.getInputCollectionSchemas().get(inputCollectionId))
+    val inputDataFrame:DataFrame = KoverseSparkSql.createDataFrame(context.getInputCollectionRdds.get(inputCollectionId),
+      SQLContext , context.getInputCollectionSchemas.get(inputCollectionId))
 
     // Split data Training (60%)
     val training: JavaRDD[LabeledPoint] = NaiveBayesHelper.generateLabeledPoints(inputDataFrame).randomSplit(Array(0.6, 0.4), seed = 11L)(0)
@@ -61,5 +58,5 @@ class NaiveBayesTrainedTransform extends JavaSparkTransform {
 
   override def getDescription: String = "Naive Bayes Training"
 
-  override def getParameters: lang.Iterable[Parameter] = Lists.newArrayList[Parameter]()
+  override def getParameters: java.lang.Iterable[Parameter] = Lists.newArrayList[Parameter]()
 }

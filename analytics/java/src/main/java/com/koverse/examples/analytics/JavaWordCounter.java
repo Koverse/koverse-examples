@@ -16,7 +16,8 @@
 
 package com.koverse.examples.analytics;
 
-import com.koverse.com.google.common.collect.Lists;
+import static com.koverse.com.google.common.collect.Lists.newArrayList;
+
 import com.koverse.sdk.data.SimpleRecord;
 
 import org.apache.spark.api.java.JavaPairRDD;
@@ -45,7 +46,7 @@ public class JavaWordCounter implements java.io.Serializable {
 
     // split the text in the records into words
     JavaRDD<String> words = inputRecordsRdd.flatMap(
-        record -> Lists.newArrayList(record.get(textFieldName).toString().split(tokenizationString)));
+        record -> newArrayList(record.get(textFieldName).toString().split(tokenizationString)).iterator());
 
     // combine the lower casing of the string with generating the pairs.
     JavaPairRDD<String, Integer> ones = words.mapToPair(word -> new Tuple2<>(word.toLowerCase().trim(), 1));

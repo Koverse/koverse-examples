@@ -16,16 +16,12 @@
 
 package com.koverse.example.spark
 
-import com.koverse.sdk.transform.spark.JavaSparkTransform
-import com.koverse.sdk.transform.spark.JavaSparkTransformContext
-import com.koverse.sdk.data.SimpleRecord
-import org.apache.spark.api.java.JavaRDD
 import com.koverse.sdk.Version
-import com.koverse.sdk.data.Parameter
+import com.koverse.sdk.data.{Parameter, SimpleRecord}
+import com.koverse.sdk.transform.scala.{RDDTransform, RDDTransformContext}
+import org.apache.spark.rdd.RDD
 
-import scala.collection.JavaConverters.seqAsJavaListConverter
-
-class WordCountTransform extends JavaSparkTransform {
+class WordCountRDDTransform extends RDDTransform {
 
   private val TEXT_FIELD_NAME_PARAMETER = "textFieldName"
 
@@ -36,19 +32,16 @@ class WordCountTransform extends JavaSparkTransform {
    * @return The resulting RDD of this transform execution.
    *         It will be applied to the output collection.
    */
-  override def execute(context: JavaSparkTransformContext): JavaRDD[SimpleRecord] = {
+  override def execute(context: RDDTransformContext): RDD[SimpleRecord] = {
 
     // This transform assumes there is a single input Data Collection
-    val inputCollectionId = context.getInputCollectionIds().get(0)
+    val textFieldName = context.getParameters.get(TEXT_FIELD_NAME_PARAMETER)
 
     // Get the RDD[SimpleRecord] that represents the input Data Collection
-    val inputRecordsRdd = context.getInputCollectionRdds.get(inputCollectionId).rdd
+    val inputRecordsRdd = context.getRDDs.values.iterator.next
 
-    // for each Record, tokenize the specified text field and count each occurence
-    val textFieldName = context.getParameters().get(TEXT_FIELD_NAME_PARAMETER)
-    
     // Create the WordCounter which will perform the logic of our Transform
-    val wordCounter = new WordCounter(textFieldName, """['".?!,:;\s]+""")
+    val wordCounter = new WordCounter(textFieldName.get, """['".?!,:;\s]+""")
     val outputRdd = wordCounter.count(inputRecordsRdd)
 
     outputRdd.toJavaRDD
@@ -64,7 +57,7 @@ class WordCountTransform extends JavaSparkTransform {
    *
    * @return The name of this transform.
    */
-  override def getName(): String = "Word Count Example"
+  override def getName: String = "Word Count RDD Example"
 
   /**
    * Get the parameters of this transform.  The returned iterable can
@@ -72,14 +65,29 @@ class WordCountTransform extends JavaSparkTransform {
    *
    * @return The parameters of this transform.
    */
-  override def getParameters(): java.lang.Iterable[Parameter] = {
+  override def getParameters: scala.collection.immutable.Seq[Parameter] = {
 
     // This parameter will allow the user to input the field name of their Records which
     // contains the strings that they want to tokenize and count the words from. By parameterizing
     // this field name, we can run this Transform on different Records in different Collections
     // without changing the code
-    val textParameter = new Parameter(TEXT_FIELD_NAME_PARAMETER, "Text Field Name", Parameter.TYPE_STRING)
-    Seq(textParameter).asJava
+    val textParameter = Parameter.newBuilder
+      .parameterName(TEXT_FIELD_NAME_PARAMETER)
+      .displayName("Text Field Name")
+      .`type`(Parameter.TYPE_STRING)
+      .defaultValue("")
+      .required(true)
+      .build
+
+    val inputDatasetParameter = Parameter.newBuilder
+      .parameterName("inputDataset")
+      .displayName("Dataset containing input records")
+      .`type`(Parameter.TYPE_INPUT_COLLECTION)
+      .required(true)
+      .build
+
+    scala.collection.immutable.Seq(textParameter, inputDatasetParameter)
+
   }
 
   /**
@@ -88,19 +96,21 @@ class WordCountTransform extends JavaSparkTransform {
    *
    * @return The programmatic id of this transform.
    */
-  override def getTypeId(): String = "wordCountExample"
+  override def getTypeId: String = "wordCountRddExample"
 
   /**
    * Get the version of this transform.
    *
    * @return The version of this transform.
    */
-  override def getVersion(): Version = new Version(0, 0, 1)
+  override def getVersion: Version = new Version(0, 0, 1)
 
   /**
    * Get the description of this transform.
    *
    * @return The the description of this transform.
    */
-  override def getDescription(): String = "This is the Word Count Example"
+  override def getDescription: String = "This is the Word Count RDD Example"
+
+  override def supportsIncrementalProcessing(): Boolean = false
 }

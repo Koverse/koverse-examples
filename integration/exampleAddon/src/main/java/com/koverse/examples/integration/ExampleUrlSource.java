@@ -16,7 +16,6 @@
 
 package com.koverse.examples.integration;
 
-
 import static com.koverse.com.google.common.base.Predicates.notNull;
 import static com.koverse.com.google.common.collect.Lists.newArrayList;
 
@@ -38,7 +37,6 @@ import java.net.URLConnection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
 
 public class ExampleUrlSource extends AbstractFileBasedSource {
 

@@ -6,7 +6,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <koverse.version>2.10.0-SNAPSHOT</koverse.version>
+        <koverse.version>3.0.3</koverse.version>
     </properties>
 
     <groupId>com.koverse.examples</groupId>
@@ -41,11 +41,31 @@
             <artifactId>koverse-thrift-client</artifactId>
             <version>${koverse.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.koverse</groupId>
+            <artifactId>koverse-sdk</artifactId>
+            <version>${koverse.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.koverse</groupId>
+            <artifactId>koverse-sdk-thrift</artifactId>
+            <version>${koverse.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

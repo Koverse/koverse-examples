@@ -21,8 +21,8 @@ import java.lang
 import com.koverse.com.google.common.collect.Lists
 import com.koverse.sdk.Version
 import com.koverse.sdk.data.{Parameter, SimpleRecord}
-import com.koverse.sdk.transform.spark.{JavaSparkTransform, JavaSparkTransformContext}
 import com.koverse.sdk.transform.spark.sql.KoverseSparkSql
+import com.koverse.sdk.transform.spark.{JavaSparkTransform, JavaSparkTransformContext}
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.regression.LabeledPoint
@@ -34,20 +34,20 @@ class NaiveBayesPredictTransform extends JavaSparkTransform {
   override def execute(context: JavaSparkTransformContext): JavaRDD[SimpleRecord] = {
 
     val SQLContext = KoverseSparkSql.createSqlContext(context.getJavaSparkContext.sc)
-    val inputCollectionId = context.getInputCollectionIds().get(0)
+    val inputCollectionId = context.getInputCollectionIds.get(0)
     // Creating a data frame from input rdd because Spark's mllib Tokenizer class requires a data frame input
-    val inputDataFrame:DataFrame = KoverseSparkSql.createDataFrame(context.getInputCollectionRdds().get(inputCollectionId),
-      SQLContext , context.getInputCollectionSchemas().get(inputCollectionId))
+    val inputDataFrame:DataFrame = KoverseSparkSql.createDataFrame(context.getInputCollectionRdds.get(inputCollectionId),
+      SQLContext , context.getInputCollectionSchemas.get(inputCollectionId))
 
-    val modelId = context.getInputCollectionIds().get(1)
-    val modelRDD:JavaRDD[SimpleRecord] = context.getInputCollectionRdds().get(modelId)
+    val modelId = context.getInputCollectionIds.get(0)
+    val modelRDD:JavaRDD[SimpleRecord] = context.getInputCollectionRdds.get(modelId)
 
     // Test Data (40%)
     val testRDD: JavaRDD[LabeledPoint] = NaiveBayesHelper.generateLabeledPoints(inputDataFrame).randomSplit(Array(0.6, 0.4), seed = 11L)(1)
 
     //Reading model
-    val byteModelRdd:RDD[Array[Byte]] = modelRDD.rdd.map[Array[Byte]]{case (modelRecord: SimpleRecord) =>
-     modelRecord.get("model").asInstanceOf[Array[Byte]]
+    val byteModelRdd:RDD[Array[Byte]] = modelRDD.rdd.map[Array[Byte]] { modelRecord: SimpleRecord =>
+      modelRecord.get("model").asInstanceOf[Array[Byte]]
     }
 
     val modelBytes:Array[Byte] = byteModelRdd.take(1)(0)
@@ -57,10 +57,10 @@ class NaiveBayesPredictTransform extends JavaSparkTransform {
 
 
     //Predictions on test data
-      val predictionAndLabel:RDD[(Double, Double)] = testRDD.rdd.map{case (p:LabeledPoint) => (model.predict(p.features), p.label)}
+      val predictionAndLabel:RDD[(Double, Double)] = testRDD.rdd.map { p: LabeledPoint => (model.predict(p.features), p.label) }
       val accuracy:Double = 1.0 * predictionAndLabel.filter(x => x._1 == x._2).count() / testRDD.count()
 
-      val predictions= predictionAndLabel.map{ case(x) =>
+      val predictions= predictionAndLabel.map { x =>
         val result = new SimpleRecord()
         result.put("prediction", x._1.toString)
         result.put("label", x._2.toString)

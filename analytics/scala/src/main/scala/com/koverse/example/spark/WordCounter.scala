@@ -16,44 +16,72 @@
 
 package com.koverse.example.spark
 
-import org.apache.spark.rdd.RDD
+import java.beans.Introspector
+
 import com.koverse.sdk.data.SimpleRecord
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.col
-import org.apache.spark.sql.functions.lower
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql._
+import org.apache.spark.sql.functions.{col, lower}
 
 class WordCounter(
-    textFieldName: String,
-    tokenizationString: String) extends java.io.Serializable {
+                   textFieldName: String,
+                   tokenizationString: String) extends java.io.Serializable {
 
   def count(inputRecordsRdd: RDD[SimpleRecord]): RDD[SimpleRecord] = {
 
     // for each Record, tokenize the specified text field and count each occurrence
-    val wordCountRdd = inputRecordsRdd.flatMap { record => record.get(textFieldName).toString().split(tokenizationString) }
-                           .map { token => token.toLowerCase().trim() }
-                           .map { token => (token, 1) }
-                           .reduceByKey { (a,b) => a + b }
+    val wordCountRdd = inputRecordsRdd.flatMap { record => record.get(textFieldName).toString.split(tokenizationString) }
+      .map { token => token.toLowerCase().trim() }
+      .map { token => (token, 1) }
+      .reduceByKey { (a, b) => a + b }
 
     // wordCountRdd is an RDD[(String, Int)] so a (word,count) tuple.
     // turn each tuple into an output Record with a "word" and "count" fields
-    val outputRdd = wordCountRdd.map { case(word, count) => {
+    val outputRdd = wordCountRdd.map { case (word, count) => {
 
       val record = new SimpleRecord()
       record.put("word", word)
       record.put("count", count)
       record
-    }}
+    }
+    }
 
     outputRdd
   }
 
   def count(inputDataFrame: DataFrame): DataFrame = {
 
-     // Take the column that contains the text and tokenize and count the words
-    val wordDF = inputDataFrame.explode(textFieldName, "word") { (text: String) => text.split(tokenizationString) }
+    // Take the column that contains the text and tokenize and count the words
+    val wordDF = inputDataFrame.explode(textFieldName, "word") { text: String => text.split(tokenizationString) }
     wordDF.select(lower(col("word")).as("lowerWord"))
-          .groupBy("lowerWord")
-          .count()
+      .groupBy("lowerWord")
+      .count()
   }
 
+  def count(inputRecordsDataset: Dataset[Message], spark: SparkSession): Dataset[WordCount] = {
+
+    import spark.implicits._
+
+    // for each Record, tokenize the specified text field and count each occurrence
+    val wordCountDataset = inputRecordsDataset.flatMap(record => {
+      val getter = Introspector.getBeanInfo(record.getClass).getPropertyDescriptors
+        .find(pd => pd.getReadMethod.getName.equals("get" + textFieldName.toLowerCase()
+          .split(' ').map(_.capitalize).mkString(" ")))
+      if (getter.isDefined) {
+        getter.get.getReadMethod.invoke(record).toString.toLowerCase.split(tokenizationString)
+      } else {
+        None
+      }
+    })
+      .map { token => token.toLowerCase().trim() }
+      .groupByKey(value => value)
+      .mapGroups((key,values) =>(key,values.length))
+      .withColumnRenamed("_1", "text")
+      .withColumnRenamed("_2", "count")
+
+    val outputDataset = wordCountDataset.as[WordCount]
+
+    outputDataset
+  }
 }
+

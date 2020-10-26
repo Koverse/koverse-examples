@@ -16,20 +16,28 @@
 
 package com.koverse.example.spark
 
-import com.holdenkarau.spark.testing.SharedSparkContext
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
-import org.junit.Assert._
 import org.scalatest.junit.JUnitRunner
 import com.koverse.sdk.data.SimpleRecord
+import org.apache.spark.sql.SparkSession
+import org.junit.Assert
+
 import scala.collection.JavaConverters._
-import com.holdenkarau.spark.testing.DataFrameSuiteBase
 
 /**
  * These tests leverage the great work at https://github.com/holdenk/spark-testing-base
  */
 @RunWith(classOf[JUnitRunner])
-class WordCounterTest extends DataFrameSuiteBase{
+class WordCounterTest extends FunSuite {
+
+  val sparkSession = SparkSession
+    .builder()
+    .appName("WordCounterDataFrameTest")
+    .master("local")
+    .getOrCreate()
+
+  val sc = sparkSession.sparkContext
 
   test("RDD test") {
     val inputRecords = List(
@@ -40,31 +48,44 @@ class WordCounterTest extends DataFrameSuiteBase{
     val wordCounter = new WordCounter("text", """['".?!,:;\s]+""")
     val outputRecordsRdd = wordCounter.count(inputRecordsRdd)
 
-    assertEquals(outputRecordsRdd.count, 10)
+    Assert.assertEquals(outputRecordsRdd.count, 10)
     val outputRecords = outputRecordsRdd.collect()
     val countRecordOption = outputRecords.find { simpleRecord => simpleRecord.get("word").equals("are") }
 
-    assertTrue(countRecordOption.isDefined)
-    assertEquals(countRecordOption.get.get("count"), 2)
+    Assert.assertTrue(countRecordOption.isDefined)
+    Assert.assertEquals(countRecordOption.get.get("count"), 2)
   }
-
-  case class Message(text: String, id: String)
 
   test("DataFrame test") {
 
     val messages = List(
-        Message("these words are to be counted", "0"),
-        Message("more words that are worth counting", "1"))
+        Message("these words are to be counted", "title", 0),
+        Message("more words that are worth counting", "title1", 1))
 
-    val inputDataFrame = sqlContext.createDataFrame(messages)
-    val wordCounter = new WordCounter("text", """['".?!,:;\s]""")
+    val inputDataFrame = sparkSession.createDataFrame(messages)
+    val wordCounter = new WordCounter("article", """['".?!,:;\s]""")
     val outputDataFrame = wordCounter.count(inputDataFrame)
 
-    assertEquals(outputDataFrame.count(), 10)
+    Assert.assertEquals(outputDataFrame.count(), 10)
     val outputRows = outputDataFrame.collect()
     val countRowOption = outputRows.find { row => row.getAs[String]("lowerWord").equals("are") }
-    assertTrue(countRowOption.isDefined)
-    assertEquals(countRowOption.get.getAs[Long]("count"), 2)
+    Assert.assertTrue(countRowOption.isDefined)
+    Assert.assertEquals(countRowOption.get.getAs[Long]("count"), 2)
+
+  }
+
+  test("Dataset test no matching fields") {
+    import sparkSession.implicits._
+
+    val messages = Seq(
+      Message("these words are to be counted", "words", 0),
+      Message("more words that are worth counting", "more words", 1))
+
+    val inputDataset = messages.toDS()//sparkSession.createDataset(messages)//.as[Message](messageEncoder)
+    val wordCounter = new WordCounter("text", """['".?!,:;\s]""")
+    val outputDataset = wordCounter.count(inputDataset, sparkSession)
+
+    Assert.assertEquals(outputDataset.count(), 0)
 
   }
 }

@@ -12,14 +12,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from unittest import TestCase
-
 from koverse.transformTest import PySparkTransformTestRunner
 
 from transform import PySparkTransform
 
+import unittest
 
-class TestWordCountTransform(TestCase):
+
+class TestWordCountTransform(unittest.TestCase):
 
     def test_count_words(self):
         text = [
@@ -28,18 +28,28 @@ class TestWordCountTransform(TestCase):
             "There are three instances of the word three"
         ]
 
-        input_datasets = [[{'text': t} for t in text]]
+        input_datasets = {'inputDatasets':[{'text': t} for t in text]}
         runner = PySparkTransformTestRunner({'text_field': 'text'}, PySparkTransform)
-        output_rdd = runner.testOnLocalData(input_datasets)
+        output_rdd = runner.testOnLocalData(input_datasets, named=True)
+
         output = output_rdd.collect()
 
         self.assertTrue('word' in output[0])
         self.assertTrue('count' in output[0])
 
-        ones = output_rdd.filter(lambda r: r['word'] == "one").collect()[0]
-        twos = output_rdd.filter(lambda r: r['word'] == "two").collect()[0]
-        threes = output_rdd.filter(lambda r: r['word'] == "three").collect()[0]
-        
-        self.assertEqual(ones['count'], 1)
-        self.assertEqual(twos['count'], 2)
-        self.assertEqual(threes['count'], 3)
+        ones, twos, threes = 0, 0, 0
+
+        for rec in output:
+            if rec['word'] == 'one':
+                ones = rec['count']
+            if rec['word'] == 'two':
+                twos = rec['count']
+            if rec['word'] == 'three':
+                threes = rec['count']
+
+        self.assertEqual(ones, 1)
+        self.assertEqual(twos, 2)
+        self.assertEqual(threes, 3)
+
+if __name__ == '__main__':
+    unittest.main()

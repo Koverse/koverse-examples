@@ -16,7 +16,7 @@
 
 package com.koverse.example.spark
 
-import java.io._
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInput, ObjectInputStream, ObjectOutput, ObjectOutputStream}
 
 object ObjectKoverseIO {
 

@@ -28,10 +28,7 @@ class PySparkTransform(object):
             input_dataframe = koverse_input_dataframe
             break  # assumes there is only one dataset as input
 
-        input_rdd = None
-        for koverse_dataset_id, koverse_input_rdd in context.inputRdds.items():
-            input_rdd = koverse_input_rdd
-            break  # assumes there is only one dataset as input
+        input_rdd = context.inputRdds['inputDatasets']
 
         word_count_rdd = count(input_rdd, self.text_field)
         return word_count_rdd
